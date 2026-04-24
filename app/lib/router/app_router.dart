@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import '../screens/landing/landing_screen.dart';
 import '../screens/login/login_screen.dart';
 import '../screens/home/home_screen.dart';
+import '../screens/tools/accounts_screen.dart';
 import '../screens/tools/companies_screen.dart';
 import '../screens/tools/dashboard_screen.dart';
 import '../screens/tools/transactions_screen.dart';
@@ -30,6 +31,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/app/companies',
       builder: (_, __) => const CompaniesScreen(),
+    ),
+    GoRoute(
+      path: '/app/accounts',
+      builder: (_, __) => const AccountsScreen(),
     ),
 
     // Placeholder para ferramentas em construção
