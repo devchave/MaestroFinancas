@@ -2,6 +2,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
+/// Fundo animado do app — sensação de vidro/água/vivo.
+/// Quatro orbs que se deslocam suavemente sobre um gradiente
+/// deslizante azul profundo. À noite o fundo fica mais escuro.
 class AnimatedBackground extends StatefulWidget {
   final Widget child;
   const AnimatedBackground({super.key, required this.child});
@@ -19,7 +22,7 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 8),
+      duration: const Duration(seconds: 10),
     )..repeat(reverse: true);
   }
 
@@ -31,6 +34,14 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
 
   @override
   Widget build(BuildContext context) {
+    final night = AppColors.isNight;
+    final gradient = night
+        ? AppColors.backgroundGradientNight
+        : AppColors.backgroundGradient;
+    // Orbs mais discretos à noite
+    final orbAlpha = night ? 0.08 : 0.15;
+    final screen = MediaQuery.of(context).size;
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
@@ -38,42 +49,47 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
         return Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment(sin(t * pi) * 0.5 - 0.5, -1),
-              end: Alignment(cos(t * pi) * 0.5 + 0.5, 1),
-              colors: [
-                Color.lerp(const Color(0xFF0A0E1A), const Color(0xFF0D1B35), t)!,
-                Color.lerp(const Color(0xFF0D1B2A), const Color(0xFF071020), t)!,
-                Color.lerp(const Color(0xFF0A1628), const Color(0xFF120A2E), t)!,
-              ],
+              begin: Alignment(sin(t * pi) * 0.6 - 0.4, -1),
+              end: Alignment(cos(t * pi) * 0.6 + 0.4, 1),
+              colors: gradient,
             ),
           ),
           child: Stack(
             children: [
-              // Orb 1
+              // 1. Indigo — profundidade "vivo"
               Positioned(
-                top: -100 + (t * 80),
-                left: -80 + (t * 60),
+                top: -120 + (t * 100),
+                left: -80 + (t * 80),
                 child: _Orb(
-                  color: AppColors.accent3.withValues(alpha: 0.15),
-                  size: 350,
+                  color: AppColors.accent3.withValues(alpha: orbAlpha),
+                  size: 380,
                 ),
               ),
-              // Orb 2
+              // 2. Sky blue — amplitude "céu"
               Positioned(
-                bottom: -120 + (t * 60),
-                right: -100 + (t * 80),
+                bottom: -140 + (t * 80),
+                right: -120 + (t * 100),
                 child: _Orb(
-                  color: AppColors.accent1.withValues(alpha: 0.12),
-                  size: 400,
+                  color: AppColors.accent1.withValues(alpha: orbAlpha - 0.02),
+                  size: 440,
                 ),
               ),
-              // Orb 3
+              // 3. Teal / aqua — "água" (novo)
               Positioned(
-                top: MediaQuery.of(context).size.height * 0.4,
-                left: MediaQuery.of(context).size.width * 0.3,
+                top: screen.height * 0.35,
+                left: screen.width * 0.2 - (t * 50),
                 child: _Orb(
-                  color: AppColors.accent2.withValues(alpha: 0.08),
-                  size: 250,
+                  color: AppColors.accent4.withValues(alpha: orbAlpha - 0.04),
+                  size: 320,
+                ),
+              ),
+              // 4. Cyan — highlight pequeno e mais vivo
+              Positioned(
+                top: screen.height * 0.08 + (t * 40),
+                right: screen.width * 0.18,
+                child: _Orb(
+                  color: AppColors.accent2.withValues(alpha: orbAlpha - 0.02),
+                  size: 200,
                 ),
               ),
               widget.child,
