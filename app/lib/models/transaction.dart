@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'finance.dart';
 
 enum TxType { income, expense }
 
@@ -85,6 +86,8 @@ const expenseCategories = [
   TxCategory.others,
 ];
 
+// ─── Transaction ──────────────────────────────────────────────────────────────
+
 class Transaction {
   final String id;
   final String title;
@@ -92,7 +95,13 @@ class Transaction {
   final TxType type;
   final TxCategory category;
   final DateTime date;
-  final String account;
+
+  /// Conta bancária a que a transação pertence.
+  final String accountId;
+
+  /// Cartão usado (opcional — só faz sentido em despesas).
+  final String? cardId;
+
   final String? note;
 
   const Transaction({
@@ -102,9 +111,46 @@ class Transaction {
     required this.type,
     required this.category,
     required this.date,
-    required this.account,
+    required this.accountId,
+    this.cardId,
     this.note,
   });
+
+  /// Objeto Account resolvido.
+  Account? get account => AccountStore.instance.byId(accountId);
+
+  /// "PF" ou "PJ" derivado da conta.
+  String get kind => account?.isPF == true ? 'PF' : 'PJ';
+
+  /// Nome da conta (fallback "?" se não existir).
+  String get accountName => account?.name ?? '?';
+
+  /// Cartão resolvido (null se não tiver).
+  PaymentCard? get card => cardId == null ? null : CardStore.instance.byId(cardId!);
+
+  Transaction copyWith({
+    String? title,
+    double? amount,
+    TxType? type,
+    TxCategory? category,
+    DateTime? date,
+    String? accountId,
+    String? cardId,
+    bool clearCard = false,
+    String? note,
+  }) {
+    return Transaction(
+      id: id,
+      title: title ?? this.title,
+      amount: amount ?? this.amount,
+      type: type ?? this.type,
+      category: category ?? this.category,
+      date: date ?? this.date,
+      accountId: accountId ?? this.accountId,
+      cardId: clearCard ? null : (cardId ?? this.cardId),
+      note: note ?? this.note,
+    );
+  }
 }
 
 // ─── Singleton store ──────────────────────────────────────────────────────────
@@ -153,6 +199,15 @@ class TransactionStore extends ChangeNotifier {
       map.entries.toList()..sort((a, b) => b.value.compareTo(a.value)),
     );
   }
+
+  /// Movimentação líquida de uma conta até agora (income - expense).
+  double netFlowForAccount(String accountId) {
+    double net = 0;
+    for (final t in _items.where((t) => t.accountId == accountId)) {
+      net += t.type == TxType.income ? t.amount : -t.amount;
+    }
+    return net;
+  }
 }
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
@@ -161,33 +216,37 @@ List<Transaction> _seed() {
   final now = DateTime.now();
   final y = now.year;
   final m = now.month;
+  // IDs de conta vêm de finance.dart:
+  //   a1 Nubank PF, a2 Itaú PF, a3 Inter Poupança PF
+  //   a4 Itaú Chavemestre (c1), a5 BTG CDB Chavemestre (c1), a6 Inter DevChave (c2)
+  // IDs de cartão: card1 (Nubank), card2 (Itaú), card3 (Inter PJ)
   return [
     Transaction(id: '1', title: 'Salário', amount: 8500, type: TxType.income,
-        category: TxCategory.salary, date: DateTime(y, m, 5), account: 'PF'),
+        category: TxCategory.salary, date: DateTime(y, m, 5), accountId: 'a1'),
     Transaction(id: '2', title: 'Projeto freelance', amount: 2200, type: TxType.income,
-        category: TxCategory.freelance, date: DateTime(y, m, 8), account: 'PF'),
+        category: TxCategory.freelance, date: DateTime(y, m, 8), accountId: 'a2'),
     Transaction(id: '3', title: 'Faturamento empresa', amount: 12000, type: TxType.income,
-        category: TxCategory.sales, date: DateTime(y, m, 10), account: 'PJ'),
+        category: TxCategory.sales, date: DateTime(y, m, 10), accountId: 'a4'),
     Transaction(id: '4', title: 'Aluguel apartamento', amount: 1800, type: TxType.expense,
-        category: TxCategory.housing, date: DateTime(y, m, 1), account: 'PF'),
+        category: TxCategory.housing, date: DateTime(y, m, 1), accountId: 'a2'),
     Transaction(id: '5', title: 'Supermercado', amount: 650, type: TxType.expense,
-        category: TxCategory.food, date: DateTime(y, m, 3), account: 'PF'),
+        category: TxCategory.food, date: DateTime(y, m, 3), accountId: 'a1', cardId: 'card1'),
     Transaction(id: '6', title: 'Uber / combustível', amount: 320, type: TxType.expense,
-        category: TxCategory.transport, date: DateTime(y, m, 7), account: 'PF'),
+        category: TxCategory.transport, date: DateTime(y, m, 7), accountId: 'a1', cardId: 'card1'),
     Transaction(id: '7', title: 'Plano de saúde', amount: 480, type: TxType.expense,
-        category: TxCategory.health, date: DateTime(y, m, 5), account: 'PF'),
+        category: TxCategory.health, date: DateTime(y, m, 5), accountId: 'a2'),
     Transaction(id: '8', title: 'Fornecedores', amount: 3200, type: TxType.expense,
-        category: TxCategory.others, date: DateTime(y, m, 12), account: 'PJ'),
+        category: TxCategory.others, date: DateTime(y, m, 12), accountId: 'a4', cardId: 'card3'),
     Transaction(id: '9', title: 'Folha de pagamento', amount: 4500, type: TxType.expense,
-        category: TxCategory.payroll, date: DateTime(y, m, 5), account: 'PJ'),
+        category: TxCategory.payroll, date: DateTime(y, m, 5), accountId: 'a4'),
     Transaction(id: '10', title: 'Restaurante', amount: 180, type: TxType.expense,
-        category: TxCategory.food, date: DateTime(y, m, 15), account: 'PF'),
+        category: TxCategory.food, date: DateTime(y, m, 15), accountId: 'a1', cardId: 'card1'),
     Transaction(id: '11', title: 'Netflix / streaming', amount: 85, type: TxType.expense,
-        category: TxCategory.entertainment, date: DateTime(y, m, 10), account: 'PF'),
+        category: TxCategory.entertainment, date: DateTime(y, m, 10), accountId: 'a1', cardId: 'card1'),
     Transaction(id: '12', title: 'Curso online', amount: 297, type: TxType.expense,
-        category: TxCategory.education, date: DateTime(y, m, 18), account: 'PF'),
+        category: TxCategory.education, date: DateTime(y, m, 18), accountId: 'a2', cardId: 'card2'),
     Transaction(id: '13', title: 'DAS Simples Nacional', amount: 420, type: TxType.expense,
-        category: TxCategory.taxes, date: DateTime(y, m, 20), account: 'PJ'),
+        category: TxCategory.taxes, date: DateTime(y, m, 20), accountId: 'a4'),
   ];
 }
 

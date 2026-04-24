@@ -271,7 +271,7 @@ List<Account> _seedAccounts() => [
 // Card — cartão de crédito/débito vinculado a uma conta
 // ════════════════════════════════════════════════════════════════════════════
 
-class Card {
+class PaymentCard {
   final String id;
   final String name;
   final String accountId;    // conta responsável pela fatura
@@ -281,7 +281,7 @@ class Card {
   final int closingDay;      // dia de fechamento da fatura
   final int dueDay;          // dia de vencimento
 
-  const Card({
+  const PaymentCard({
     required this.id,
     required this.name,
     required this.accountId,
@@ -292,7 +292,7 @@ class Card {
     required this.dueDay,
   });
 
-  Card copyWith({
+  PaymentCard copyWith({
     String? name,
     String? accountId,
     CardBrand? brand,
@@ -301,7 +301,7 @@ class Card {
     int? closingDay,
     int? dueDay,
   }) {
-    return Card(
+    return PaymentCard(
       id: id,
       name: name ?? this.name,
       accountId: accountId ?? this.accountId,
@@ -350,21 +350,21 @@ class CardStore extends ChangeNotifier {
     _items = _seedCards();
   }
 
-  late List<Card> _items;
-  List<Card> get all => List.unmodifiable(_items);
+  late List<PaymentCard> _items;
+  List<PaymentCard> get all => List.unmodifiable(_items);
 
-  Card? byId(String id) =>
+  PaymentCard? byId(String id) =>
       _items.where((c) => c.id == id).firstOrNull;
 
-  List<Card> forAccount(String accountId) =>
+  List<PaymentCard> forAccount(String accountId) =>
       _items.where((c) => c.accountId == accountId).toList();
 
-  void add(Card c) {
+  void add(PaymentCard c) {
     _items.add(c);
     notifyListeners();
   }
 
-  void update(Card c) {
+  void update(PaymentCard c) {
     final i = _items.indexWhere((x) => x.id == c.id);
     if (i >= 0) {
       _items[i] = c;
@@ -378,8 +378,8 @@ class CardStore extends ChangeNotifier {
   }
 }
 
-List<Card> _seedCards() => [
-      const Card(
+List<PaymentCard> _seedCards() => [
+      const PaymentCard(
         id: 'card1',
         name: 'Nubank Mastercard',
         accountId: 'a1',
@@ -389,7 +389,7 @@ List<Card> _seedCards() => [
         closingDay: 15,
         dueDay: 22,
       ),
-      const Card(
+      const PaymentCard(
         id: 'card2',
         name: 'Itaú Personnalité Visa',
         accountId: 'a2',
@@ -399,7 +399,7 @@ List<Card> _seedCards() => [
         closingDay: 3,
         dueDay: 10,
       ),
-      const Card(
+      const PaymentCard(
         id: 'card3',
         name: 'Inter Mastercard PJ',
         accountId: 'a4',

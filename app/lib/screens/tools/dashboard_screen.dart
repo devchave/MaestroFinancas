@@ -497,7 +497,7 @@ class TxRow extends StatelessWidget {
                     children: [
                       Text(tx.category.label, style: AppTypo.caption),
                       const SizedBox(width: 6),
-                      _AccountTag(tx.account),
+                      _AccountTag(tx.kind),
                     ],
                   ),
                 ],

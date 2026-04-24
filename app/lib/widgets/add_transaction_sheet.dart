@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/finance.dart';
 import '../models/transaction.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -46,6 +47,18 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
     super.dispose();
   }
 
+  /// Mapeamento provisório do toggle PF/PJ para um accountId real.
+  /// Na Etapa 6 será substituído por seletor completo de Conta + Cartão.
+  String _resolveAccountId() {
+    final accounts = AccountStore.instance.all;
+    if (_account == 'PF') {
+      final pf = accounts.where((a) => a.isPF).toList();
+      return pf.isNotEmpty ? pf.first.id : accounts.first.id;
+    }
+    final pj = accounts.where((a) => !a.isPF).toList();
+    return pj.isNotEmpty ? pj.first.id : accounts.first.id;
+  }
+
   void _save() {
     final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '.'));
     if (amount == null || amount <= 0) return;
@@ -56,7 +69,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
       type: _type,
       category: _category!,
       date: _date,
-      account: _account,
+      accountId: _resolveAccountId(),
     ));
     Navigator.pop(context);
   }
