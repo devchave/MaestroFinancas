@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../models/transaction.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_typography.dart';
 import '../../widgets/add_transaction_sheet.dart';
-import '../../widgets/glass_container.dart';
+import '../../widgets/app_ui.dart';
 import '../../widgets/tool_scaffold.dart';
 import 'dashboard_screen.dart' show MonthSelector, TxRow;
 
-enum _Filter { all, income, expense }
+enum TxFilter { all, income, expense }
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -18,7 +20,7 @@ class TransactionsScreen extends StatefulWidget {
 
 class _TransactionsScreenState extends State<TransactionsScreen> {
   late DateTime _month;
-  _Filter _filter = _Filter.all;
+  TxFilter _filter = TxFilter.all;
   final _store = TransactionStore.instance;
 
   @override
@@ -29,16 +31,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   List<Transaction> _filtered(List<Transaction> all) => switch (_filter) {
-        _Filter.income => all.where((t) => t.type == TxType.income).toList(),
-        _Filter.expense => all.where((t) => t.type == TxType.expense).toList(),
-        _Filter.all => all,
+        TxFilter.income =>
+          all.where((t) => t.type == TxType.income).toList(),
+        TxFilter.expense =>
+          all.where((t) => t.type == TxType.expense).toList(),
+        TxFilter.all => all,
       };
 
   Map<String, List<Transaction>> _grouped(List<Transaction> txs) {
     final map = <String, List<Transaction>>{};
     for (final t in txs) {
-      final key = fmtDateGroup(t.date);
-      (map[key] ??= []).add(t);
+      (map[fmtDateGroup(t.date)] ??= []).add(t);
     }
     return map;
   }
@@ -75,58 +78,80 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
           return Column(
             children: [
-              // Mini summary
+              // Resumo
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.screen,
+                    AppSpacing.sm,
+                    AppSpacing.screen,
+                    AppSpacing.smd),
                 child: Row(
                   children: [
-                    _SummaryChip(
-                        label: 'Receitas',
-                        value: income,
-                        color: AppColors.positive,
-                        icon: Icons.south_rounded),
-                    const SizedBox(width: 10),
-                    _SummaryChip(
-                        label: 'Despesas',
-                        value: expense,
-                        color: AppColors.negative,
-                        icon: Icons.north_rounded),
-                    const SizedBox(width: 10),
-                    _SummaryChip(
-                        label: 'Saldo',
-                        value: income - expense,
-                        color: (income - expense) >= 0
-                            ? AppColors.positive
-                            : AppColors.negative,
-                        icon: Icons.account_balance_wallet_rounded),
+                    Expanded(
+                      child: _SummaryTile(
+                          label: 'Receitas',
+                          value: income,
+                          color: AppColors.positive,
+                          icon: Icons.south_rounded),
+                    ),
+                    const SizedBox(width: AppSpacing.smd),
+                    Expanded(
+                      child: _SummaryTile(
+                          label: 'Despesas',
+                          value: expense,
+                          color: AppColors.negative,
+                          icon: Icons.north_rounded),
+                    ),
+                    const SizedBox(width: AppSpacing.smd),
+                    Expanded(
+                      child: _SummaryTile(
+                          label: 'Saldo',
+                          value: income - expense,
+                          color: (income - expense) >= 0
+                              ? AppColors.positive
+                              : AppColors.negative,
+                          icon: Icons.account_balance_wallet_rounded),
+                    ),
                   ],
                 ),
               ),
 
-              // Filter tabs
+              // Filtros
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
                 child: Row(
                   children: [
-                    _FilterTab('Todos', _Filter.all, all.length),
-                    const SizedBox(width: 8),
-                    _FilterTab('Receitas', _Filter.income,
-                        all.where((t) => t.type == TxType.income).length),
-                    const SizedBox(width: 8),
-                    _FilterTab('Despesas', _Filter.expense,
-                        all.where((t) => t.type == TxType.expense).length),
+                    _filterChip('Todos', TxFilter.all, all.length),
+                    const SizedBox(width: AppSpacing.sm),
+                    _filterChip(
+                        'Receitas',
+                        TxFilter.income,
+                        all
+                            .where((t) => t.type == TxType.income)
+                            .length),
+                    const SizedBox(width: AppSpacing.sm),
+                    _filterChip(
+                        'Despesas',
+                        TxFilter.expense,
+                        all
+                            .where((t) => t.type == TxType.expense)
+                            .length),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.smd),
 
-              // List
+              // Lista
               Expanded(
                 child: visible.isEmpty
                     ? _EmptyList()
                     : ListView(
-                        padding:
-                            const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                        padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.screen,
+                            0,
+                            AppSpacing.screen,
+                            AppSpacing.hero + AppSpacing.xl),
                         children: [
                           for (final entry in groups.entries) ...[
                             _DateHeader(label: entry.key),
@@ -144,63 +169,26 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
   }
 
-  Widget _FilterTab(String label, _Filter value, int count) {
-    final sel = _filter == value;
-    return GestureDetector(
+  Widget _filterChip(String label, TxFilter value, int count) {
+    return StatusChip(
+      label: label,
+      color: AppColors.accent1,
+      selected: _filter == value,
+      count: count,
       onTap: () => setState(() => _filter = value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: sel
-              ? AppColors.accent1.withValues(alpha: 0.18)
-              : AppColors.glassWhite,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: sel ? AppColors.accent1 : AppColors.glassBorder,
-            width: sel ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                color: sel ? AppColors.accent1 : AppColors.textSecondary,
-                fontSize: 13,
-                fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
-              ),
-            ),
-            const SizedBox(width: 5),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-              decoration: BoxDecoration(
-                color: sel
-                    ? AppColors.accent1.withValues(alpha: 0.2)
-                    : AppColors.glassBorder.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text('$count',
-                  style: GoogleFonts.inter(
-                    color: sel ? AppColors.accent1 : AppColors.textSecondary,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  )),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
 
-class _SummaryChip extends StatelessWidget {
+// ─── Summary tile ─────────────────────────────────────────────────────────────
+
+class _SummaryTile extends StatelessWidget {
   final String label;
   final double value;
   final Color color;
   final IconData icon;
 
-  const _SummaryChip({
+  const _SummaryTile({
     required this.label,
     required this.value,
     required this.color,
@@ -209,35 +197,36 @@ class _SummaryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: GlassContainer(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        borderRadius: 12,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: color, size: 12),
-                const SizedBox(width: 4),
-                Text(label,
-                    style: GoogleFonts.inter(
-                        color: AppColors.textSecondary, fontSize: 10)),
-              ],
+    return AppCard(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.smd, vertical: AppSpacing.sm + 1),
+      radius: AppRadius.md,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 12),
+              const SizedBox(width: 4),
+              Text(label, style: AppTypo.labelSmall),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            fmtBRL(value.abs()),
+            style: AppTypo.bodySmall.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(height: 3),
-            Text(
-              fmtBRL(value.abs()),
-              style: GoogleFonts.inter(
-                  color: color, fontSize: 12, fontWeight: FontWeight.w700),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }
 }
+
+// ─── Date header ──────────────────────────────────────────────────────────────
 
 class _DateHeader extends StatelessWidget {
   final String label;
@@ -246,22 +235,20 @@ class _DateHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8, top: 4),
+      padding: const EdgeInsets.only(
+          bottom: AppSpacing.sm, top: AppSpacing.xs),
       child: Row(
         children: [
-          Text(label,
-              style: GoogleFonts.inter(
-                  color: AppColors.textSecondary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600)),
-          const SizedBox(width: 10),
-          const Expanded(
-              child: Divider(color: AppColors.glassBorder, height: 1)),
+          Text(label, style: AppTypo.label),
+          const SizedBox(width: AppSpacing.smd - 2),
+          const Expanded(child: AppDivider()),
         ],
       ),
     );
   }
 }
+
+// ─── Empty ────────────────────────────────────────────────────────────────────
 
 class _EmptyList extends StatelessWidget {
   @override
@@ -272,10 +259,10 @@ class _EmptyList extends StatelessWidget {
         children: [
           Icon(Icons.receipt_long_rounded,
               color: AppColors.glassBorder, size: 40),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.smd),
           Text('Nenhuma transação encontrada',
-              style: GoogleFonts.inter(
-                  color: AppColors.textSecondary, fontSize: 14)),
+              style: AppTypo.body
+                  .copyWith(color: AppColors.textSecondary)),
         ],
       ),
     );
