@@ -3,6 +3,7 @@ import '../screens/landing/landing_screen.dart';
 import '../screens/login/login_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/tools/accounts_screen.dart';
+import '../screens/tools/cards_screen.dart';
 import '../screens/tools/companies_screen.dart';
 import '../screens/tools/dashboard_screen.dart';
 import '../screens/tools/transactions_screen.dart';
@@ -35,6 +36,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/app/accounts',
       builder: (_, __) => const AccountsScreen(),
+    ),
+    GoRoute(
+      path: '/app/cards',
+      builder: (_, __) => const CardsScreen(),
     ),
 
     // Placeholder para ferramentas em construção
