@@ -124,10 +124,6 @@ class _Header extends StatelessWidget {
       child: Row(
         children: [
           const _LogoMark(size: 40),
-          if (!isMobile) ...[
-            const SizedBox(width: 14),
-            const BrandName(blackSize: 20, stacked: false),
-          ],
           const Spacer(),
           if (!isMobile) ...[
             _NavLink('Sobre', onTap: () {}),
