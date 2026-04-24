@@ -22,7 +22,7 @@ log "Criando docker-compose.docs.yml em /opt/maestro/docs/"
 cat > /opt/maestro/docs/docker-compose.yml << 'COMPOSEEOF'
 services:
   docs:
-    image: ghcr.io/devchave/maestrofinan-as-docs:${DOCS_TAG:-latest}
+    image: ghcr.io/devchave/maestrofinancas-docs:${DOCS_TAG:-latest}
     container_name: maestro_docs
     restart: unless-stopped
     ports:

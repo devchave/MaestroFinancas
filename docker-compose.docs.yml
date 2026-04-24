@@ -1,6 +1,6 @@
 services:
   docs:
-    image: ghcr.io/devchave/maestrofinan-as-docs:${DOCS_TAG:-latest}
+    image: ghcr.io/devchave/maestrofinancas-docs:${DOCS_TAG:-latest}
     container_name: maestro_docs
     restart: unless-stopped
     # Expõe apenas para o nginx da VPS (não para a internet diretamente)
