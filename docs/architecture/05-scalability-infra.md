@@ -169,25 +169,36 @@ métricas.
 
 ## 6. CI/CD
 
+> Documentação completa e templates executáveis em
+> [08-cicd-deploy.md](08-cicd-deploy.md) e no diretório `deploy/`.
+
+**Fase 1 — Webhook-pull + Docker Compose (em uso agora):**
+
 ```mermaid
 flowchart LR
-    DEV[Pull Request] --> CI[GitHub Actions]
+    DEV[git push / tag] --> CI[GitHub Actions\nci.yml]
     CI --> LINT[lint + typecheck]
-    CI --> TEST[unit + integration<br/>Testcontainers]
-    CI --> SEC[Semgrep + Trivy + OSV]
-    CI --> BUILD[Docker build + sign<br/>cosign]
-    BUILD --> REG[(Registry)]
-    REG --> ARGO[Argo CD]
-    ARGO --> STG[staging]
-    STG -->|smoke + canary| ARGO
-    ARGO --> PROD[prod]
+    CI --> TEST[tests\nTestcontainers]
+    CI --> BUILD[Docker build + push\nghcr.io]
+    BUILD --> SIGN[cosign sign\nkeyless OIDC]
+    SIGN -->|POST /deploy + HMAC| RCV_S[Receiver\nstaging VPS]
+    RCV_S --> SH_S[deploy.sh\npull → migrate → up → health]
+    SIGN -.->|tag + approval| RCV_P[Receiver\nprod VPS]
+    RCV_P --> SH_P[deploy.sh]
 ```
 
-- **Progressive delivery**: canary 5% → 25% → 100% com análise
-  automática por Prometheus (taxa de erro, p95).
-- **Rollback** em um comando via Argo Rollouts.
-- **Imagens assinadas** com cosign; Kyverno bloqueia imagens não
-  assinadas no admission controller.
+- **Staging**: automático a cada push no `main`.
+- **Produção**: tag `v*.*.*` + approval manual (GitHub Environments).
+- **Rollback**: automático em falha de health check.
+- **Notificação**: Discord (início + resultado).
+
+**Fase 2 — GitOps com Argo CD (quando migrar para k3s):**
+
+- `ci.yml` não muda; Argo CD substitui o receiver.
+- Argo CD observa repositório `infra` (Helm/Kustomize).
+- Pipeline atualiza a tag via PR automático; Argo sincroniza.
+- Canary 5% → 25% → 100% via Argo Rollouts + métricas Prometheus.
+- Imagens assinadas com cosign; Kyverno bloqueia imagens sem assinatura.
 
 ---
 

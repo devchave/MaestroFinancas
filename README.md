@@ -37,12 +37,14 @@ cristalina em movimento, onde os reflexos de luz trazem dinamismo e fluidez.
 | 05 | [Escalabilidade & Infra](docs/architecture/05-scalability-infra.md) | Hostinger, S3, autoscaling |
 | 06 | [Modelo de Dados](docs/architecture/06-data-model.md) | Schema + multi-tenancy via RLS |
 | 07 | [RBAC Granular](docs/architecture/07-rbac.md) | Matriz de permissões |
+| 08 | [CI/CD & Deploy Automático](docs/architecture/08-cicd-deploy.md) | Webhook-pull, GitHub Actions, deploy.sh, rollback |
 
 ## Status
 
 - [x] Briefing de produto
 - [x] Arquitetura de referência (este pacote)
 - [ ] Protótipo de UI (Glassmorphism + fundo em movimento)
+- [x] Estratégia CI/CD & auto-deploy (doc 08 + templates em `deploy/`)
 - [ ] MVP backend (Auth + Financeiro + Open Finance)
 - [ ] Integração Pluggy/Belvo sandbox
 - [ ] Engine de insights v1

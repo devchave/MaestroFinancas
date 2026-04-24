@@ -1,0 +1,41 @@
+[Unit]
+Description=MaestroFinanças — Deploy Webhook Receiver
+Documentation=https://github.com/devchave/maestrofinan-as/blob/main/docs/architecture/08-cicd-deploy.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=deploy
+Group=deploy
+WorkingDirectory=/opt/maestro/receiver
+
+# Node.js — ajuste o path se usar nvm/fnm
+ExecStart=/usr/bin/node index.js
+
+Restart=always
+RestartSec=5
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Variáveis de ambiente (nunca coloque segredos no unit file — use EnvironmentFile)
+EnvironmentFile=/etc/maestro/receiver.env
+
+# ── Hardening ────────────────────────────────────────────────────────────────
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/maestro /opt/maestro
+
+# O receiver precisa chamar docker (via deploy.sh)
+# O usuário "deploy" deve estar no grupo "docker"
+SupplementaryGroups=docker
+
+# Limites de recursos
+LimitNOFILE=4096
+MemoryMax=256M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target

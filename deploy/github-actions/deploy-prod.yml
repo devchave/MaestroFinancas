@@ -1,0 +1,73 @@
+name: Deploy → Production
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'   # ex: v1.2.3
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: 'Tag da imagem (ex: sha-abc1234 ou v1.2.3)'
+        required: true
+        type: string
+
+jobs:
+  deploy-prod:
+    name: Deploy → Production
+    runs-on: ubuntu-latest
+    # "environment: production" obriga approval manual no GitHub Settings
+    # → Settings > Environments > production > Required reviewers
+    environment: production
+    steps:
+      - name: Resolver tag da imagem
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # Push de tag git: usa a tag como tag da imagem
+            echo "value=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          else
+            # Dispatch manual: usa o input
+            echo "value=${{ inputs.image-tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verificar que a imagem existe no registry
+        env:
+          TAG: ${{ steps.tag.outputs.value }}
+        run: |
+          docker manifest inspect \
+            ghcr.io/${{ github.repository }}:$TAG > /dev/null 2>&1 \
+          || { echo "❌ Imagem não encontrada: $TAG"; exit 1; }
+
+      - name: Chamar webhook da VPS (produção)
+        env:
+          TAG: ${{ steps.tag.outputs.value }}
+          IMAGE: ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.value }}
+          SECRET: ${{ secrets.PROD_WEBHOOK_SECRET }}
+          URL: ${{ secrets.PROD_RECEIVER_URL }}
+        run: |
+          PAYLOAD=$(jq -cn \
+            --arg sha "${{ github.sha }}" \
+            --arg tag "$TAG" \
+            --arg image "$IMAGE" \
+            --arg env "production" \
+            '{sha:$sha, tag:$tag, image:$image, env:$env}')
+
+          SIG="sha256=$(printf '%s' "$PAYLOAD" | \
+            openssl dgst -sha256 -hmac "$SECRET" -hex | \
+            awk '{print $2}')"
+
+          HTTP=$(curl -sf -o /dev/null -w "%{http_code}" \
+            -X POST "$URL/deploy" \
+            -H "Content-Type: application/json" \
+            -H "X-Hub-Signature-256: $SIG" \
+            -d "$PAYLOAD" \
+            --max-time 15)
+
+          [ "$HTTP" = "202" ] || { echo "❌ Webhook falhou: HTTP $HTTP"; exit 1; }
+          echo "✅ Deploy de produção aceito — $IMAGE"
+
+      - name: Criar Release no GitHub
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
