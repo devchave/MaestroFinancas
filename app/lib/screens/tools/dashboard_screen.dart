@@ -7,7 +7,7 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../../widgets/add_transaction_sheet.dart';
 import '../../widgets/app_ui.dart';
-import '../../widgets/tool_scaffold.dart';
+import '../../widgets/app_shell.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -29,8 +29,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ToolScaffold(
-      toolId: 'dashboard',
+    return AppShell(
+      showTopBar: true,
+      currentId: 'dashboard',
       trailing: MonthSelector(
         month: _month,
         onPrev: () => setState(

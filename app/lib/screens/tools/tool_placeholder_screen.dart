@@ -5,7 +5,7 @@ import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../../widgets/app_ui.dart';
-import '../../widgets/tool_scaffold.dart';
+import '../../widgets/app_shell.dart';
 
 class ToolPlaceholderScreen extends StatelessWidget {
   final String toolId;
@@ -29,8 +29,9 @@ class ToolPlaceholderScreen extends StatelessWidget {
       );
     }
 
-    return ToolScaffold(
-      toolId: toolId,
+    return AppShell(
+      showTopBar: true,
+      currentId: toolId,
       content: Center(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.xl),

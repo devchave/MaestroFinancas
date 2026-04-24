@@ -6,7 +6,7 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../../widgets/add_transaction_sheet.dart';
 import '../../widgets/app_ui.dart';
-import '../../widgets/tool_scaffold.dart';
+import '../../widgets/app_shell.dart';
 import 'dashboard_screen.dart' show MonthSelector, TxRow;
 
 enum TxFilter { all, income, expense }
@@ -48,8 +48,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ToolScaffold(
-      toolId: 'transactions',
+    return AppShell(
+      showTopBar: true,
+      currentId: 'transactions',
       trailing: MonthSelector(
         month: _month,
         onPrev: () => setState(
