@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: maestro-db
+    environment:
+      POSTGRES_USER: maestro
+      POSTGRES_PASSWORD: maestro123
+      POSTGRES_DB: maestro
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U maestro -d maestro"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    container_name: maestro-api
+    environment:
+      DATABASE_URL: postgresql://maestro:maestro123@db/maestro
+      SECRET_KEY: maestro-jwt-secret-troque-em-producao-2025
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
