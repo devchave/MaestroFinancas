@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/transaction.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/add_transaction_sheet.dart';
-import '../../widgets/animated_background.dart';
 import '../../widgets/glass_container.dart';
+import '../../widgets/tool_scaffold.dart';
 import 'dashboard_screen.dart' show MonthSelector, TxRow;
 
 enum _Filter { all, income, expense }
@@ -46,141 +45,101 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bg1,
-      body: AnimatedBackground(
-        child: SafeArea(
-          child: ListenableBuilder(
-            listenable: _store,
-            builder: (context, _) {
-              final y = _month.year;
-              final m = _month.month;
-              final all = _store.forMonth(y, m);
-              final income = _store.incomeForMonth(y, m);
-              final expense = _store.expenseForMonth(y, m);
-              final visible = _filtered(all);
-              final groups = _grouped(visible);
-
-              return Column(
-                children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_rounded,
-                              color: AppColors.textSecondary, size: 20),
-                          onPressed: () => context.go('/home'),
-                        ),
-                        Container(
-                          width: 32, height: 32,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(9),
-                          ),
-                          child: const Icon(Icons.swap_horiz_rounded,
-                              color: Colors.white, size: 18),
-                        ),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Text('Transações',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16)),
-                        ),
-                        MonthSelector(
-                          month: _month,
-                          onPrev: () => setState(() =>
-                              _month = DateTime(_month.year, _month.month - 1)),
-                          onNext: () {
-                            final now = DateTime.now();
-                            if (_month.year == now.year &&
-                                _month.month == now.month) return;
-                            setState(() => _month =
-                                DateTime(_month.year, _month.month + 1));
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Mini summary
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-                    child: Row(
-                      children: [
-                        _SummaryChip(
-                            label: 'Receitas',
-                            value: income,
-                            color: AppColors.positive,
-                            icon: Icons.south_rounded),
-                        const SizedBox(width: 10),
-                        _SummaryChip(
-                            label: 'Despesas',
-                            value: expense,
-                            color: AppColors.negative,
-                            icon: Icons.north_rounded),
-                        const SizedBox(width: 10),
-                        _SummaryChip(
-                            label: 'Saldo',
-                            value: income - expense,
-                            color: (income - expense) >= 0
-                                ? AppColors.positive
-                                : AppColors.negative,
-                            icon: Icons.account_balance_wallet_rounded),
-                      ],
-                    ),
-                  ),
-
-                  // Filter tabs
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      children: [
-                        _FilterTab('Todos', _Filter.all, all.length),
-                        const SizedBox(width: 8),
-                        _FilterTab('Receitas', _Filter.income,
-                            all.where((t) => t.type == TxType.income).length),
-                        const SizedBox(width: 8),
-                        _FilterTab('Despesas', _Filter.expense,
-                            all.where((t) => t.type == TxType.expense).length),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // List
-                  Expanded(
-                    child: visible.isEmpty
-                        ? _EmptyList()
-                        : ListView(
-                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                            children: [
-                              for (final entry in groups.entries) ...[
-                                _DateHeader(label: entry.key),
-                                ...entry.value.map((t) => TxRow(
-                                    tx: t,
-                                    onDelete: () => _store.remove(t.id))),
-                              ],
-                            ],
-                          ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
+    return ToolScaffold(
+      toolId: 'transactions',
+      trailing: MonthSelector(
+        month: _month,
+        onPrev: () => setState(
+            () => _month = DateTime(_month.year, _month.month - 1)),
+        onNext: () {
+          final now = DateTime.now();
+          if (_month.year == now.year && _month.month == now.month) return;
+          setState(() => _month = DateTime(_month.year, _month.month + 1));
+        },
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.accent1,
         onPressed: () => showAddTransactionSheet(context, _store),
         child: const Icon(Icons.add_rounded, color: Colors.white),
+      ),
+      content: ListenableBuilder(
+        listenable: _store,
+        builder: (context, _) {
+          final y = _month.year;
+          final m = _month.month;
+          final all = _store.forMonth(y, m);
+          final income = _store.incomeForMonth(y, m);
+          final expense = _store.expenseForMonth(y, m);
+          final visible = _filtered(all);
+          final groups = _grouped(visible);
+
+          return Column(
+            children: [
+              // Mini summary
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                child: Row(
+                  children: [
+                    _SummaryChip(
+                        label: 'Receitas',
+                        value: income,
+                        color: AppColors.positive,
+                        icon: Icons.south_rounded),
+                    const SizedBox(width: 10),
+                    _SummaryChip(
+                        label: 'Despesas',
+                        value: expense,
+                        color: AppColors.negative,
+                        icon: Icons.north_rounded),
+                    const SizedBox(width: 10),
+                    _SummaryChip(
+                        label: 'Saldo',
+                        value: income - expense,
+                        color: (income - expense) >= 0
+                            ? AppColors.positive
+                            : AppColors.negative,
+                        icon: Icons.account_balance_wallet_rounded),
+                  ],
+                ),
+              ),
+
+              // Filter tabs
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    _FilterTab('Todos', _Filter.all, all.length),
+                    const SizedBox(width: 8),
+                    _FilterTab('Receitas', _Filter.income,
+                        all.where((t) => t.type == TxType.income).length),
+                    const SizedBox(width: 8),
+                    _FilterTab('Despesas', _Filter.expense,
+                        all.where((t) => t.type == TxType.expense).length),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // List
+              Expanded(
+                child: visible.isEmpty
+                    ? _EmptyList()
+                    : ListView(
+                        padding:
+                            const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                        children: [
+                          for (final entry in groups.entries) ...[
+                            _DateHeader(label: entry.key),
+                            ...entry.value.map((t) => TxRow(
+                                tx: t,
+                                onDelete: () => _store.remove(t.id))),
+                          ],
+                        ],
+                      ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

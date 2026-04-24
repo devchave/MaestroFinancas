@@ -4,8 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/transaction.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/add_transaction_sheet.dart';
-import '../../widgets/animated_background.dart';
 import '../../widgets/glass_container.dart';
+import '../../widgets/tool_scaffold.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -27,82 +27,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bg1,
-      body: AnimatedBackground(
-        child: SafeArea(
-          child: ListenableBuilder(
-            listenable: _store,
-            builder: (context, _) {
-              final y = _month.year;
-              final m = _month.month;
-              final income = _store.incomeForMonth(y, m);
-              final expense = _store.expenseForMonth(y, m);
-              final balance = income - expense;
-              final cats = _store.expensesByCategory(y, m);
-              final recent = _store.forMonth(y, m).take(5).toList();
-
-              return Column(
-                children: [
-                  _buildHeader(context),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding:
-                          const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _BalanceCard(
-                              balance: balance,
-                              income: income,
-                              expense: expense),
-                          const SizedBox(height: 16),
-                          _IncomeExpenseBar(
-                              income: income, expense: expense),
-                          const SizedBox(height: 20),
-                          if (cats.isNotEmpty) ...[
-                            _sectionLabel('Gastos por categoria'),
-                            const SizedBox(height: 10),
-                            _CategoriesCard(
-                                categories: cats, total: expense),
-                            const SizedBox(height: 20),
-                          ],
-                          Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
-                            children: [
-                              _sectionLabel('Últimas transações'),
-                              TextButton(
-                                onPressed: () =>
-                                    context.go('/tools/transactions'),
-                                style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: Size.zero,
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap),
-                                child: Text('Ver todas →',
-                                    style: GoogleFonts.inter(
-                                        color: AppColors.accent1,
-                                        fontSize: 13)),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          if (recent.isEmpty)
-                            _EmptyState()
-                          else
-                            ...recent.map((t) => TxRow(
-                                tx: t,
-                                onDelete: () => _store.remove(t.id))),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
+    return ToolScaffold(
+      toolId: 'dashboard',
+      trailing: MonthSelector(
+        month: _month,
+        onPrev: () => setState(
+            () => _month = DateTime(_month.year, _month.month - 1)),
+        onNext: () {
+          final now = DateTime.now();
+          if (_month.year == now.year && _month.month == now.month) return;
+          setState(() => _month = DateTime(_month.year, _month.month + 1));
+        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.accent1,
@@ -112,55 +47,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
             style: GoogleFonts.inter(
                 color: Colors.white, fontWeight: FontWeight.w600)),
       ),
-    );
-  }
+      content: ListenableBuilder(
+        listenable: _store,
+        builder: (context, _) {
+          final y = _month.year;
+          final m = _month.month;
+          final income = _store.incomeForMonth(y, m);
+          final expense = _store.expenseForMonth(y, m);
+          final balance = income - expense;
+          final cats = _store.expensesByCategory(y, m);
+          final recent = _store.forMonth(y, m).take(5).toList();
 
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios_rounded,
-                color: AppColors.textSecondary, size: 20),
-            onPressed: () => context.go('/home'),
-          ),
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0EA5E9), Color(0xFF06B6D4)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(9),
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _BalanceCard(
+                    balance: balance, income: income, expense: expense),
+                const SizedBox(height: 16),
+                _IncomeExpenseBar(income: income, expense: expense),
+                const SizedBox(height: 20),
+                if (cats.isNotEmpty) ...[
+                  _sectionLabel('Gastos por categoria'),
+                  const SizedBox(height: 10),
+                  _CategoriesCard(categories: cats, total: expense),
+                  const SizedBox(height: 20),
+                ],
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _sectionLabel('Últimas transações'),
+                    TextButton(
+                      onPressed: () => context.go('/tools/transactions'),
+                      style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                      child: Text('Ver todas →',
+                          style: GoogleFonts.inter(
+                              color: AppColors.accent1, fontSize: 13)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                if (recent.isEmpty)
+                  _EmptyState()
+                else
+                  ...recent.map(
+                      (t) => TxRow(tx: t, onDelete: () => _store.remove(t.id))),
+              ],
             ),
-            child: const Icon(Icons.bar_chart_rounded,
-                color: Colors.white, size: 18),
-          ),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Text(
-              'Visão Geral',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16),
-            ),
-          ),
-          MonthSelector(
-            month: _month,
-            onPrev: () =>
-                setState(() => _month = DateTime(_month.year, _month.month - 1)),
-            onNext: () {
-              final now = DateTime.now();
-              if (_month.year == now.year && _month.month == now.month) return;
-              setState(
-                  () => _month = DateTime(_month.year, _month.month + 1));
-            },
-          ),
-        ],
+          );
+        },
       ),
     );
   }
