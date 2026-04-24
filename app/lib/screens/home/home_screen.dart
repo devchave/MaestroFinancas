@@ -38,20 +38,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final now = DateTime.now();
-    final timeStr =
-        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-
     return Scaffold(
       body: AnimatedBackground(
         child: SafeArea(
           child: Column(
             children: [
-              // Status bar
-              _StatusBar(time: timeStr),
-
-              // User greeting
+              const SizedBox(height: 10),
               _GreetingBar().animate().fadeIn(delay: 200.ms),
 
               // Saldo card
@@ -136,36 +128,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _StatusBar extends StatelessWidget {
-  final String time;
-  const _StatusBar({required this.time});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-      child: Row(
-        children: [
-          Text(
-            time,
-            style: GoogleFonts.inter(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
-            ),
-          ),
-          const Spacer(),
-          const Icon(Icons.signal_cellular_alt, color: Colors.white, size: 16),
-          const SizedBox(width: 6),
-          const Icon(Icons.wifi, color: Colors.white, size: 16),
-          const SizedBox(width: 6),
-          const Icon(Icons.battery_full, color: Colors.white, size: 16),
-        ],
-      ),
-    );
-  }
-}
-
 class _GreetingBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -176,12 +138,22 @@ class _GreetingBar extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Olá, devchave 👋',
-                style: GoogleFonts.inter(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                ),
+              Row(
+                children: [
+                  Text(
+                    'Olá, devchave',
+                    style: GoogleFonts.inter(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(
+                    Icons.waving_hand_rounded,
+                    color: Color(0xFFF59E0B),
+                    size: 14,
+                  ),
+                ],
               ),
               Text(
                 'Bom dia!',

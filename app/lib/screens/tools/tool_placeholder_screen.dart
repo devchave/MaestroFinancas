@@ -133,13 +133,21 @@ class ToolPlaceholderScreen extends StatelessWidget {
                               color: tool.color.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Text(
-                              '🚧 Em breve',
-                              style: GoogleFonts.inter(
-                                color: tool.color,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.construction_rounded,
+                                    color: tool.color, size: 16),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Em breve',
+                                  style: GoogleFonts.inter(
+                                    color: tool.color,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
