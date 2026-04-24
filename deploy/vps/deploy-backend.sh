@@ -18,7 +18,10 @@ echo "==> [1/5] Atualizando repositório..."
 if [ -d "$APP_DIR/.git" ]; then
   git -C "$APP_DIR" pull origin main
 else
-  git clone --depth 1 --branch main "$REPO" "$APP_DIR"
+  # Diretório existe mas não é git — clonar em tmp e mesclar
+  git clone --depth 1 --branch main "$REPO" /tmp/maestro-repo
+  cp -r /tmp/maestro-repo/. "$APP_DIR/"
+  rm -rf /tmp/maestro-repo
 fi
 
 # ── 2. Copiar build Flutter web ───────────────────────────────────────────────
