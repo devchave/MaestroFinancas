@@ -5,6 +5,7 @@ import '../screens/home/home_screen.dart';
 import '../screens/tools/accounts_screen.dart';
 import '../screens/tools/cards_screen.dart';
 import '../screens/tools/companies_screen.dart';
+import '../screens/tools/wallet_screen.dart';
 import '../screens/tools/dashboard_screen.dart';
 import '../screens/tools/transactions_screen.dart';
 import '../screens/tools/tool_placeholder_screen.dart';
@@ -40,6 +41,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/app/cards',
       builder: (_, __) => const CardsScreen(),
+    ),
+    GoRoute(
+      path: '/app/wallet',
+      builder: (_, __) => const WalletScreen(),
     ),
 
     // Placeholder para ferramentas em construção
