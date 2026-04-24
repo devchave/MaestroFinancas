@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/finance.dart';
 import '../../models/transaction.dart';
+import '../../state/app_context.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
@@ -81,10 +82,11 @@ class _AccountsScreenState extends State<AccountsScreen> {
                 color: Colors.white, fontWeight: FontWeight.w600)),
       ),
       content: ListenableBuilder(
-        listenable:
-            Listenable.merge([_store, _companyStore, _txStore]),
+        listenable: Listenable.merge(
+            [_store, _companyStore, _txStore, AppContext.instance]),
         builder: (context, _) {
-          final all = _store.all;
+          // Aplica filtro de contexto global
+          final all = AppContext.instance.filterAccounts(_store.all);
           if (all.isEmpty) {
             return _EmptyState(onAdd: () => _openForm());
           }

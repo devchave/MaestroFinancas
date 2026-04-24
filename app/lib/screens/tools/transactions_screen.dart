@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/transaction.dart';
+import '../../state/app_context.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
@@ -67,13 +68,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
       content: ListenableBuilder(
-        listenable: _store,
+        listenable: Listenable.merge([_store, AppContext.instance]),
         builder: (context, _) {
           final y = _month.year;
           final m = _month.month;
-          final all = _store.forMonth(y, m);
-          final income = _store.incomeForMonth(y, m);
-          final expense = _store.expenseForMonth(y, m);
+          // Aplica filtro de contexto global antes de calcular métricas
+          final all = AppContext.instance
+              .filterTransactions(_store.forMonth(y, m));
+          final income = all
+              .where((t) => t.type == TxType.income)
+              .fold<double>(0, (s, t) => s + t.amount);
+          final expense = all
+              .where((t) => t.type == TxType.expense)
+              .fold<double>(0, (s, t) => s + t.amount);
           final visible = _filtered(all);
           final groups = _grouped(visible);
 

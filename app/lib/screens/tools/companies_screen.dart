@@ -63,6 +63,7 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
   Widget build(BuildContext context) {
     return AppShell(
       showTopBar: true,
+      showContextBar: false,
       currentId: 'companies',
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.accent1,

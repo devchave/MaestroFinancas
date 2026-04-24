@@ -7,6 +7,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import 'animated_background.dart';
 import 'app_ui.dart';
+import 'context_bar.dart';
 import 'version_badge.dart';
 
 const _kCollapsed = 64.0;
@@ -39,6 +40,10 @@ class AppShell extends StatefulWidget {
   /// FAB.
   final Widget? floatingActionButton;
 
+  /// Mostra barra de contexto (Todos/PF/Empresas). `true` por padrão.
+  /// Telas como Configurações ou Empresas podem desabilitar.
+  final bool showContextBar;
+
   const AppShell({
     super.key,
     required this.currentId,
@@ -46,6 +51,7 @@ class AppShell extends StatefulWidget {
     this.showTopBar = false,
     this.trailing,
     this.floatingActionButton,
+    this.showContextBar = true,
   });
 
   @override
@@ -124,6 +130,7 @@ class _AppShellState extends State<AppShell> {
                   showMenu: false,
                   onMenu: () {},
                 ),
+              if (widget.showContextBar) const ContextBar(),
               Expanded(child: widget.content),
               const _QuickDock(),
             ],
@@ -148,6 +155,7 @@ class _AppShellState extends State<AppShell> {
           // Home sem top bar: ainda precisa de hamburger para abrir drawer
           _HomeBar(
               onMenu: () => _scaffoldKey.currentState?.openDrawer()),
+        if (widget.showContextBar) const ContextBar(),
         Expanded(child: widget.content),
         const _QuickDock(),
       ],

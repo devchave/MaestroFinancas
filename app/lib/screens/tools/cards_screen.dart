@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/finance.dart';
 import '../../models/transaction.dart';
+import '../../state/app_context.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
@@ -93,10 +94,14 @@ class _CardsScreenState extends State<CardsScreen> {
                 color: Colors.white, fontWeight: FontWeight.w600)),
       ),
       content: ListenableBuilder(
-        listenable:
-            Listenable.merge([_store, _accountStore, _txStore]),
+        listenable: Listenable.merge(
+            [_store, _accountStore, _txStore, AppContext.instance]),
         builder: (context, _) {
-          final cards = _store.all;
+          // Filtra cartões cujas contas estão no contexto atual
+          final cards = _store.all.where((c) {
+            final acc = _accountStore.byId(c.accountId);
+            return acc != null && AppContext.instance.matchesAccount(acc);
+          }).toList();
           if (cards.isEmpty) {
             return _EmptyState(onAdd: () => _openForm());
           }
