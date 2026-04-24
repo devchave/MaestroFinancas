@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import 'liquid_glass.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // AppButton — botão unificado (primary / secondary / ghost)
@@ -202,7 +203,12 @@ class AppCard extends StatelessWidget {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// AppIconBadge — ícone dentro de caixa com gradiente (usado em toda UI)
+// AppIconBadge — ícone Liquid Glass / Clear Colorful
+//
+// O ícone aparece "colorido através do vidro": há uma tinta ambiente
+// (color bleed) por baixo da camada frost; o ícone em si é desenhado
+// na cor da categoria sobre o vidro. Rim de luz no topo e borda
+// translúcida dão a sensação de squircle de vidro do iOS 26.
 // ════════════════════════════════════════════════════════════════════════════
 
 class AppIconBadge extends StatelessWidget {
@@ -221,28 +227,52 @@ class AppIconBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final radius = size * 0.28;
+    return SizedBox(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color, color.withValues(alpha: 0.7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(size * 0.28),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.35),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Glow externo colorido (halo)
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(radius),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.28),
+                  blurRadius: size * 0.45,
+                  spreadRadius: -size * 0.15,
+                  offset: Offset(0, size * 0.08),
+                ),
+              ],
+            ),
+          ),
+          // Liquid glass + ícone
+          LiquidGlass(
+            tint: color,
+            tintStrength: 1.1,
+            radius: radius,
+            blur: 18,
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: Center(
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: iconSize ?? size * 0.5,
+                  shadows: [
+                    Shadow(
+                      color: color.withValues(alpha: 0.6),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
-      ),
-      child: Icon(
-        icon,
-        color: Colors.white,
-        size: iconSize ?? size * 0.5,
       ),
     );
   }
