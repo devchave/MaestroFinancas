@@ -79,7 +79,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     _sectionLabel('Últimas transações'),
                     TextButton(
-                      onPressed: () => context.go('/tools/transactions'),
+                      onPressed: () => context.go('/app/transactions'),
                       style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
                           minimumSize: Size.zero,

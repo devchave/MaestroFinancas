@@ -43,7 +43,7 @@ class _ToolScaffoldState extends State<ToolScaffold> {
           subtitle: '',
           icon: Icons.category_rounded,
           color: AppColors.textSecondary,
-          route: '/tools/${widget.toolId}',
+          route: '/app/${widget.toolId}',
         ),
       );
 
@@ -184,7 +184,7 @@ class _DesktopSidebar extends StatelessWidget {
           const Divider(height: 1, color: AppColors.glassBorder),
           _HomeItem(
             expanded: expanded,
-            onTap: () => context.go('/home'),
+            onTap: () => context.go('/app'),
           ),
           if (expanded) ...[
             const Padding(
@@ -272,7 +272,7 @@ class _MobileDrawer extends StatelessWidget {
               expanded: true,
               onTap: () {
                 Navigator.pop(context);
-                context.go('/home');
+                context.go('/app');
               },
             ),
             const Padding(

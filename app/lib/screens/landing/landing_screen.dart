@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/brand_name.dart';
-import '../../widgets/glass_container.dart';
 import '../../widgets/version_badge.dart';
 
 class LandingScreen extends StatelessWidget {
@@ -129,7 +128,7 @@ class _Header extends StatelessWidget {
           if (!isMobile) ...[
             _NavLink('Sobre', onTap: () {}),
             _NavLink('Conteúdo', onTap: () {}),
-            _NavLink('App', onTap: () => context.go('/app')),
+            _NavLink('App', onTap: () => context.go('/login')),
             const SizedBox(width: 16),
           ],
           _GoldButton(
@@ -300,7 +299,7 @@ class _HeroSection extends StatelessWidget {
               ),
               _OutlineSilverButton(
                 label: 'Conhecer o App',
-                onPressed: () => context.go('/app'),
+                onPressed: () => context.go('/login'),
               ),
             ],
           ).animate().fadeIn(delay: 500.ms, duration: 600.ms),
@@ -822,7 +821,7 @@ class _AppSection extends StatelessWidget {
           const SizedBox(height: 24),
           _OutlineSilverButton(
             label: 'Ver demonstração do app',
-            onPressed: () => context.go('/app'),
+            onPressed: () => context.go('/login'),
           ),
         ],
       ),

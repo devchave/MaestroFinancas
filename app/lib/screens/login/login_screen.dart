@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _login() async {
     setState(() => _loading = true);
     await Future.delayed(const Duration(seconds: 1));
-    if (mounted) context.go('/home');
+    if (mounted) context.go('/app');
   }
 
   @override

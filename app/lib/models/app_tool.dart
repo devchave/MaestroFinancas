@@ -25,7 +25,7 @@ final List<AppTool> appTools = [
     subtitle: 'Resumo consolidado',
     icon: Icons.bar_chart_rounded,
     color: const Color(0xFF0EA5E9),
-    route: '/tools/dashboard',
+    route: '/app/dashboard',
   ),
   AppTool(
     id: 'wallet',
@@ -33,7 +33,7 @@ final List<AppTool> appTools = [
     subtitle: 'Saldos e patrimônio',
     icon: Icons.account_balance_wallet_rounded,
     color: const Color(0xFF10B981),
-    route: '/tools/wallet',
+    route: '/app/wallet',
   ),
   AppTool(
     id: 'transactions',
@@ -41,7 +41,7 @@ final List<AppTool> appTools = [
     subtitle: 'Entradas e saídas',
     icon: Icons.swap_horiz_rounded,
     color: const Color(0xFF6366F1),
-    route: '/tools/transactions',
+    route: '/app/transactions',
   ),
   AppTool(
     id: 'accounts',
@@ -49,7 +49,7 @@ final List<AppTool> appTools = [
     subtitle: 'Bancos e contas',
     icon: Icons.account_balance_rounded,
     color: const Color(0xFF06B6D4),
-    route: '/tools/accounts',
+    route: '/app/accounts',
   ),
   AppTool(
     id: 'cards',
@@ -57,7 +57,7 @@ final List<AppTool> appTools = [
     subtitle: 'Crédito e débito',
     icon: Icons.credit_card_rounded,
     color: const Color(0xFFF59E0B),
-    route: '/tools/cards',
+    route: '/app/cards',
   ),
   AppTool(
     id: 'budget',
@@ -65,7 +65,7 @@ final List<AppTool> appTools = [
     subtitle: 'Metas e limites',
     icon: Icons.pie_chart_rounded,
     color: const Color(0xFFEC4899),
-    route: '/tools/budget',
+    route: '/app/budget',
   ),
   AppTool(
     id: 'investments',
@@ -73,7 +73,7 @@ final List<AppTool> appTools = [
     subtitle: 'Carteira de ativos',
     icon: Icons.trending_up_rounded,
     color: const Color(0xFF8B5CF6),
-    route: '/tools/investments',
+    route: '/app/investments',
   ),
   AppTool(
     id: 'invoices',
@@ -81,7 +81,7 @@ final List<AppTool> appTools = [
     subtitle: 'NF-e e recibos',
     icon: Icons.receipt_long_rounded,
     color: const Color(0xFF14B8A6),
-    route: '/tools/invoices',
+    route: '/app/invoices',
   ),
   AppTool(
     id: 'companies',
@@ -89,7 +89,7 @@ final List<AppTool> appTools = [
     subtitle: 'Gestão PJ',
     icon: Icons.business_rounded,
     color: const Color(0xFF3B82F6),
-    route: '/tools/companies',
+    route: '/app/companies',
   ),
   AppTool(
     id: 'employees',
@@ -97,7 +97,7 @@ final List<AppTool> appTools = [
     subtitle: 'Folha e RH',
     icon: Icons.people_rounded,
     color: const Color(0xFFF97316),
-    route: '/tools/employees',
+    route: '/app/employees',
   ),
   AppTool(
     id: 'insights',
@@ -105,7 +105,7 @@ final List<AppTool> appTools = [
     subtitle: 'Análise inteligente',
     icon: Icons.auto_awesome_rounded,
     color: const Color(0xFFA855F7),
-    route: '/tools/insights',
+    route: '/app/insights',
   ),
   AppTool(
     id: 'settings',
@@ -113,7 +113,7 @@ final List<AppTool> appTools = [
     subtitle: 'Configurações',
     icon: Icons.settings_rounded,
     color: const Color(0xFF64748B),
-    route: '/tools/settings',
+    route: '/app/settings',
   ),
 ];
 
