@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -146,7 +145,11 @@ class AppButton extends StatelessWidget {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// AppCard — card glass padronizado
+// AppCard — card Liquid Glass
+//
+// Construído sobre LiquidGlass. Aceita opcionalmente um `accentColor`
+// para dar uma tinta ambiente (ex: card de tool placeholder tingido
+// com a cor da ferramenta).
 // ════════════════════════════════════════════════════════════════════════════
 
 class AppCard extends StatelessWidget {
@@ -168,24 +171,14 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final r = radius ?? AppRadius.lg;
-    final borderColor = accentColor != null
-        ? accentColor!.withValues(alpha: 0.3)
-        : AppColors.glassBorder;
 
-    Widget card = ClipRRect(
-      borderRadius: BorderRadius.circular(r),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: padding ?? const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.glassWhite,
-            borderRadius: BorderRadius.circular(r),
-            border: Border.all(color: borderColor),
-          ),
-          child: child,
-        ),
-      ),
+    Widget card = LiquidGlass(
+      tint: accentColor,
+      tintStrength: accentColor != null ? 0.5 : 0,
+      radius: r,
+      blur: 14,
+      padding: padding ?? const EdgeInsets.all(AppSpacing.md),
+      child: child,
     );
 
     if (onTap != null) {
