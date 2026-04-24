@@ -200,8 +200,8 @@ class _LogoMark extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(size * 0.25),
         child: Image.asset(
-          'assets/images/protocolo-black/logo.png',
-          fit: BoxFit.cover,
+          'assets/images/protocolo-black/Logomarca_fundoremovido.png',
+          fit: BoxFit.contain,
           errorBuilder: (_, __, ___) => Center(
             child: Text(
               'PB',
@@ -322,7 +322,7 @@ class _BannerImage extends StatelessWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(22),
             child: Image.asset(
-              'assets/images/protocolo-black/banner.jpg',
+              'assets/images/protocolo-black/Banner Protocolo Black.png',
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => Container(
                 decoration: const BoxDecoration(
