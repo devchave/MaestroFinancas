@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../models/app_tool.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_typography.dart';
 import '../../widgets/animated_background.dart';
-import '../../widgets/glass_container.dart';
+import '../../widgets/app_ui.dart';
 import '../../widgets/version_badge.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,7 +21,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentPage = 0;
   final _pageController = PageController();
 
-  // Divide tools into pages of 8 (2 rows × 4 cols), last page has rest
   List<List<AppTool>> get _pages {
     final list = appTools
         .where((t) => !dockTools.any((d) => d.id == t.id))
@@ -44,18 +45,19 @@ class _HomeScreenState extends State<HomeScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.smd),
               _GreetingBar().animate().fadeIn(delay: 200.ms),
-
-              // Saldo card
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                child: _BalanceCard().animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screen, AppSpacing.md, AppSpacing.screen, 0),
+                child: _BalanceCard()
+                    .animate()
+                    .fadeIn(delay: 300.ms)
+                    .slideY(begin: 0.2, end: 0),
               ),
+              const SizedBox(height: AppSpacing.lg),
 
-              const SizedBox(height: 24),
-
-              // Apps grid (paginado)
+              // Grid paginado
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
@@ -63,14 +65,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemCount: _pages.length,
                   itemBuilder: (context, pageIndex) {
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.screen),
                       child: GridView.builder(
                         physics: const NeverScrollableScrollPhysics(),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 4,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 20,
+                          crossAxisSpacing: AppSpacing.md,
+                          mainAxisSpacing: AppSpacing.lg,
                           childAspectRatio: 0.75,
                         ),
                         itemCount: _pages[pageIndex].length,
@@ -79,11 +82,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           return _AppIcon(tool: tool)
                               .animate()
                               .fadeIn(
-                                delay: Duration(milliseconds: 100 + i * 60),
-                              )
+                                  delay: Duration(
+                                      milliseconds: 100 + i * 60))
                               .scale(
                                 begin: const Offset(0.8, 0.8),
-                                delay: Duration(milliseconds: 100 + i * 60),
+                                delay: Duration(
+                                    milliseconds: 100 + i * 60),
                                 duration: 300.ms,
                                 curve: Curves.easeOutBack,
                               );
@@ -94,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              // Page indicator
+              // Indicador de página
               if (_pages.length > 1)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -109,20 +113,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: _currentPage == i
                             ? AppColors.accent1
                             : AppColors.glassBorder,
-                        borderRadius: BorderRadius.circular(3),
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.xs),
                       ),
                     ),
                   ),
                 ),
 
-              const SizedBox(height: 12),
-
-              // Dock
+              const SizedBox(height: AppSpacing.smd),
               _Dock(),
-
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.sm),
               const VersionBadge(),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.smd),
             ],
           ),
         ),
@@ -131,55 +133,56 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// ─── Greeting ─────────────────────────────────────────────────────────────────
+
 class _GreetingBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12
+        ? 'Bom dia!'
+        : (hour < 18 ? 'Boa tarde!' : 'Boa noite!');
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding:
+          const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
       child: Row(
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'Olá, devchave',
-                    style: GoogleFonts.inter(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text('Olá, devchave',
+                        style: AppTypo.bodySmall),
+                    const SizedBox(width: 6),
+                    Icon(
+                      AppColors.isNight
+                          ? Icons.nights_stay_rounded
+                          : Icons.waving_hand_rounded,
+                      color: AppColors.isNight
+                          ? AppColors.accent3
+                          : const Color(0xFFF59E0B),
+                      size: 14,
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Icon(
-                    Icons.waving_hand_rounded,
-                    color: Color(0xFFF59E0B),
-                    size: 14,
-                  ),
-                ],
-              ),
-              Text(
-                'Bom dia!',
-                style: GoogleFonts.inter(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(greeting, style: AppTypo.headline),
+              ],
+            ),
           ),
-          const Spacer(),
-          GlassContainer(
-            borderRadius: 50,
+          AppCard(
             padding: const EdgeInsets.all(2),
+            radius: AppRadius.pill,
             child: CircleAvatar(
               radius: 20,
-              backgroundColor: AppColors.accent3.withValues(alpha: 0.4),
-              child: const Text(
-                'D',
-                style: TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.w700),
-              ),
+              backgroundColor:
+                  AppColors.accent3.withValues(alpha: 0.4),
+              child: Text('D',
+                  style: AppTypo.titleSmall
+                      .copyWith(color: Colors.white)),
             ),
           ),
         ],
@@ -188,60 +191,28 @@ class _GreetingBar extends StatelessWidget {
   }
 }
 
+// ─── Balance card ─────────────────────────────────────────────────────────────
+
 class _BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return GlassContainer(
-      padding: const EdgeInsets.all(20),
-      borderRadius: 24,
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      radius: AppRadius.xl,
       child: Row(
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Patrimônio total',
-                  style: GoogleFonts.inter(
-                      color: AppColors.textSecondary, fontSize: 12),
-                ),
+                Text('Patrimônio total', style: AppTypo.bodySmall),
                 const SizedBox(height: 4),
-                Text(
-                  'R\$ 48.320,00',
-                  style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
-                  ),
-                ),
+                Text('R\$ 48.320,00', style: AppTypo.numberLarge),
                 const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.positive.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.trending_up_rounded,
-                              color: AppColors.positive, size: 14),
-                          const SizedBox(width: 4),
-                          Text(
-                            '+2,4% hoje',
-                            style: GoogleFonts.inter(
-                                color: AppColors.positive,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                StatusChip(
+                  label: '+2,4% hoje',
+                  color: AppColors.positive,
+                  icon: Icons.trending_up_rounded,
                 ),
               ],
             ),
@@ -271,26 +242,24 @@ class _MiniStat extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm, vertical: 2),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
             child: Text(label,
-                style: GoogleFonts.inter(
-                    color: color,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700)),
+                style: AppTypo.labelSmall.copyWith(color: color)),
           ),
           const SizedBox(height: 2),
           Text(value,
-              style: GoogleFonts.inter(
-                  color: AppColors.textSecondary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500)),
+              style: AppTypo.bodySmall.copyWith(
+                  fontWeight: FontWeight.w600)),
         ],
       );
 }
+
+// ─── App icon (tile in the grid) ──────────────────────────────────────────────
 
 class _AppIcon extends StatelessWidget {
   final AppTool tool;
@@ -303,41 +272,20 @@ class _AppIcon extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  tool.color,
-                  tool.color.withValues(alpha: 0.7),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: tool.color.withValues(alpha: 0.35),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Icon(tool.icon, color: Colors.white, size: 28),
-          ),
-          const SizedBox(height: 6),
+          AppIconBadge(
+              icon: tool.icon, color: tool.color, size: 60),
+          const SizedBox(height: AppSpacing.sm - 2),
           Text(
             tool.name,
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
+            style: AppTypo.labelSmall.copyWith(
               color: Colors.white,
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              shadows: [
-                const Shadow(
+              shadows: const [
+                Shadow(
                   color: Colors.black54,
                   blurRadius: 4,
                   offset: Offset(0, 1),
@@ -351,42 +299,28 @@ class _AppIcon extends StatelessWidget {
   }
 }
 
+// ─── Dock ─────────────────────────────────────────────────────────────────────
+
 class _Dock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: GlassContainer(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        borderRadius: 28,
-        blur: 20,
+      padding:
+          const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: AppCard(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md, vertical: AppSpacing.smd),
+        radius: AppRadius.xxl,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: dockTools
               .map((tool) => GestureDetector(
                     onTap: () => context.go(tool.route),
-                    child: Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            tool.color,
-                            tool.color.withValues(alpha: 0.7),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: tool.color.withValues(alpha: 0.4),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Icon(tool.icon, color: Colors.white, size: 24),
+                    child: AppIconBadge(
+                      icon: tool.icon,
+                      color: tool.color,
+                      size: 52,
+                      iconSize: 24,
                     ),
                   ))
               .toList(),
