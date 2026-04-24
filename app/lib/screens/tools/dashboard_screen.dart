@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/transaction.dart';
+import '../../state/app_context.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
@@ -8,6 +9,7 @@ import '../../theme/app_typography.dart';
 import '../../widgets/add_transaction_sheet.dart';
 import '../../widgets/app_ui.dart';
 import '../../widgets/app_shell.dart';
+import '../../widgets/charts.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -34,12 +36,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       currentId: 'dashboard',
       trailing: MonthSelector(
         month: _month,
-        onPrev: () => setState(
-            () => _month = DateTime(_month.year, _month.month - 1)),
+        onPrev: () =>
+            setState(() => _month = DateTime(_month.year, _month.month - 1)),
         onNext: () {
           final now = DateTime.now();
           if (_month.year == now.year && _month.month == now.month) return;
-          setState(() => _month = DateTime(_month.year, _month.month + 1));
+          setState(
+              () => _month = DateTime(_month.year, _month.month + 1));
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -47,19 +50,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onPressed: () => showAddTransactionSheet(context, _store),
         icon: const Icon(Icons.add_rounded, color: Colors.white),
         label: Text('Novo lançamento',
-            style: AppTypo.body.copyWith(
-                color: Colors.white, fontWeight: FontWeight.w600)),
+            style: AppTypo.body
+                .copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
       ),
       content: ListenableBuilder(
-        listenable: _store,
+        listenable: Listenable.merge([_store, AppContext.instance]),
         builder: (context, _) {
           final y = _month.year;
           final m = _month.month;
-          final income = _store.incomeForMonth(y, m);
-          final expense = _store.expenseForMonth(y, m);
+          final ctx = AppContext.instance;
+
+          final allMonth =
+              ctx.filterTransactions(_store.forMonth(y, m));
+          final income = allMonth
+              .where((t) => t.type == TxType.income)
+              .fold(0.0, (s, t) => s + t.amount);
+          final expense = allMonth
+              .where((t) => t.type == TxType.expense)
+              .fold(0.0, (s, t) => s + t.amount);
           final balance = income - expense;
-          final cats = _store.expensesByCategory(y, m);
-          final recent = _store.forMonth(y, m).take(5).toList();
+
+          final expCats = <TxCategory, double>{};
+          final incCats = <TxCategory, double>{};
+          for (final t in allMonth) {
+            if (t.type == TxType.expense) {
+              expCats[t.category] = (expCats[t.category] ?? 0) + t.amount;
+            } else {
+              incCats[t.category] = (incCats[t.category] ?? 0) + t.amount;
+            }
+          }
+          final sortedExp = expCats.entries.toList()
+            ..sort((a, b) => b.value.compareTo(a.value));
+          final sortedInc = incCats.entries.toList()
+            ..sort((a, b) => b.value.compareTo(a.value));
+
+          // 6-month series filtered by context
+          final series = _store.monthlySeries(
+            lastMonths: 6,
+            filter: ctx.matchesTransaction,
+          );
+          final incSpark = series.map((s) => s.income).toList();
+          final expSpark = series.map((s) => s.expense).toList();
+
+          final recent = allMonth.take(5).toList();
 
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
@@ -70,17 +103,79 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _BalanceCard(
-                    balance: balance, income: income, expense: expense),
-                const SizedBox(height: AppSpacing.md),
-                _IncomeExpenseBar(income: income, expense: expense),
+                // ── 1. Saldo principal ─────────────────────────────────────
+                _BalanceHero(balance: balance),
+                const SizedBox(height: AppSpacing.smd),
+
+                // ── 2. Receitas / Despesas com sparkline ───────────────────
+                Row(
+                  children: [
+                    Expanded(
+                      child: _FlowCard(
+                        label: 'Receitas',
+                        value: income,
+                        color: AppColors.positive,
+                        icon: Icons.south_rounded,
+                        sparkData: incSpark,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.smd),
+                    Expanded(
+                      child: _FlowCard(
+                        label: 'Despesas',
+                        value: expense,
+                        color: AppColors.negative,
+                        icon: Icons.north_rounded,
+                        sparkData: expSpark,
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: AppSpacing.lg),
-                if (cats.isNotEmpty) ...[
-                  const SectionLabel('GASTOS POR CATEGORIA'),
+
+                // ── 3. Evolução mensal (6 meses) ───────────────────────────
+                const SectionLabel('EVOLUÇÃO MENSAL'),
+                const SizedBox(height: AppSpacing.smd),
+                AppCard(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: MonthlyGroupedBarChart(series: series, height: 140),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
+                // ── 4. Top despesas por categoria (donut + legenda) ────────
+                if (sortedExp.isNotEmpty) ...[
+                  const SectionLabel('TOP DESPESAS'),
                   const SizedBox(height: AppSpacing.smd),
-                  _CategoriesCard(categories: cats, total: expense),
+                  AppCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: _DonutSection(
+                      entries: sortedExp.take(5).toList(),
+                      total: expense,
+                      label: 'Despesas',
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.lg),
                 ],
+
+                // ── 5. Top entradas por categoria (barras horizontais) ─────
+                if (sortedInc.isNotEmpty) ...[
+                  const SectionLabel('TOP ENTRADAS'),
+                  const SizedBox(height: AppSpacing.smd),
+                  AppCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: HorizontalBarList(
+                      items: sortedInc.take(5).map((e) => HBarItem(
+                            label: e.key.label,
+                            value: e.value,
+                            color: e.key.color,
+                            icon: e.key.icon,
+                          )).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+
+                // ── 6. Últimas transações ──────────────────────────────────
                 SectionLabel(
                   'ÚLTIMAS TRANSAÇÕES',
                   trailing: TextButton(
@@ -88,8 +183,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
                         minimumSize: Size.zero,
-                        tapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap),
                     child: Text('Ver todas →',
                         style: AppTypo.bodySmall
                             .copyWith(color: AppColors.accent1)),
@@ -99,14 +193,214 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 if (recent.isEmpty)
                   _EmptyState()
                 else
-                  ...recent.map((t) => TxRow(
-                      tx: t,
-                      onDelete: () => _store.remove(t.id))),
+                  ...recent.map((t) =>
+                      TxRow(tx: t, onDelete: () => _store.remove(t.id))),
               ],
             ),
           );
         },
       ),
+    );
+  }
+}
+
+// ─── Balance hero card ────────────────────────────────────────────────────────
+
+class _BalanceHero extends StatelessWidget {
+  final double balance;
+  const _BalanceHero({required this.balance});
+
+  @override
+  Widget build(BuildContext context) {
+    final positive = balance >= 0;
+    return AppCard(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
+      radius: AppRadius.xl,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('Saldo do mês', style: AppTypo.bodySmall),
+              const Spacer(),
+              _ContextBadge(),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                fmtBRL(balance),
+                style: AppTypo.numberLarge.copyWith(
+                  color: positive ? AppColors.positive : AppColors.negative,
+                  fontSize: 32,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Icon(
+                  positive
+                      ? Icons.trending_up_rounded
+                      : Icons.trending_down_rounded,
+                  color: positive ? AppColors.positive : AppColors.negative,
+                  size: 22,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContextBadge extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final ctx = AppContext.instance;
+    return Container(
+      padding:
+          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: ctx.color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: ctx.color.withValues(alpha: 0.35)),
+      ),
+      child: Text(ctx.label,
+          style: AppTypo.labelSmall.copyWith(color: ctx.color)),
+    );
+  }
+}
+
+// ─── Flow card (receitas / despesas) com sparkline ────────────────────────────
+
+class _FlowCard extends StatelessWidget {
+  final String label;
+  final double value;
+  final Color color;
+  final IconData icon;
+  final List<double> sparkData;
+
+  const _FlowCard({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.icon,
+    required this.sparkData,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.smd),
+      radius: AppRadius.lg,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 13),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(label, style: AppTypo.labelSmall),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            fmtBRL(value),
+            style: AppTypo.bodyLarge.copyWith(
+                color: color, fontWeight: FontWeight.w700),
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SparklineChart(data: sparkData, color: color, height: 38),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Donut section ────────────────────────────────────────────────────────────
+
+class _DonutSection extends StatelessWidget {
+  final List<MapEntry<TxCategory, double>> entries;
+  final double total;
+  final String label;
+
+  const _DonutSection({
+    required this.entries,
+    required this.total,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final segments = entries
+        .map((e) => DonutSegment(
+            color: e.key.color, value: e.value, label: e.key.label))
+        .toList();
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Donut
+        DonutChart(
+          segments: segments,
+          size: 120,
+          strokeWidth: 18,
+          centerLabel: label,
+          centerSub: fmtBRL(total)
+              .replaceAll('R\$ ', '')
+              .replaceAll(',00', ''),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        // Legend
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: entries.asMap().entries.map((entry) {
+              final i = entry.key;
+              final e = entry.value;
+              final pct = total > 0 ? (e.value / total * 100) : 0.0;
+              return Padding(
+                padding: EdgeInsets.only(
+                    bottom: i < entries.length - 1 ? AppSpacing.sm : 0),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: e.key.color,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(e.key.label,
+                          style: AppTypo.caption,
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                    Text('${pct.toStringAsFixed(0)}%',
+                        style: AppTypo.caption.copyWith(
+                            fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -128,7 +422,8 @@ class MonthSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final isCurrent = month.year == now.year && month.month == now.month;
+    final isCurrent =
+        month.year == now.year && month.month == now.month;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -148,7 +443,8 @@ class _NavBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final bool dimmed;
-  const _NavBtn({required this.icon, required this.onTap, this.dimmed = false});
+  const _NavBtn(
+      {required this.icon, required this.onTap, this.dimmed = false});
 
   @override
   Widget build(BuildContext context) {
@@ -157,281 +453,16 @@ class _NavBtn extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xs),
         child: Icon(icon,
-            color: dimmed ? AppColors.glassBorder : AppColors.textSecondary,
+            color: dimmed
+                ? AppColors.glassBorder
+                : AppColors.textSecondary,
             size: 22),
       ),
     );
   }
 }
 
-// ─── Balance card ─────────────────────────────────────────────────────────────
-
-class _BalanceCard extends StatelessWidget {
-  final double balance;
-  final double income;
-  final double expense;
-
-  const _BalanceCard(
-      {required this.balance,
-      required this.income,
-      required this.expense});
-
-  @override
-  Widget build(BuildContext context) {
-    final positive = balance >= 0;
-    return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      radius: AppRadius.xl,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Saldo do mês', style: AppTypo.bodySmall),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Text(
-                fmtBRL(balance),
-                style: AppTypo.numberLarge.copyWith(
-                  color: positive ? AppColors.positive : AppColors.negative,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Icon(
-                positive
-                    ? Icons.arrow_upward_rounded
-                    : Icons.arrow_downward_rounded,
-                color: positive ? AppColors.positive : AppColors.negative,
-                size: 18,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              Expanded(
-                child: _MiniTile(
-                  label: 'Receitas',
-                  value: income,
-                  color: AppColors.positive,
-                  icon: Icons.south_rounded,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.smd),
-              Expanded(
-                child: _MiniTile(
-                  label: 'Despesas',
-                  value: expense,
-                  color: AppColors.negative,
-                  icon: Icons.north_rounded,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniTile extends StatelessWidget {
-  final String label;
-  final double value;
-  final Color color;
-  final IconData icon;
-
-  const _MiniTile({
-    required this.label,
-    required this.value,
-    required this.color,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.smd, vertical: AppSpacing.sm + 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 14),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: AppTypo.caption),
-                Text(
-                  fmtBRL(value),
-                  style: AppTypo.bodySmall.copyWith(
-                      color: color, fontWeight: FontWeight.w700),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Income vs expense bar ────────────────────────────────────────────────────
-
-class _IncomeExpenseBar extends StatelessWidget {
-  final double income;
-  final double expense;
-
-  const _IncomeExpenseBar({required this.income, required this.expense});
-
-  @override
-  Widget build(BuildContext context) {
-    final total = income + expense;
-    if (total == 0) return const SizedBox.shrink();
-    final incomeRatio = (income / total).clamp(0.01, 0.99);
-
-    return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Receitas vs Despesas', style: AppTypo.label),
-              Text(
-                '${(incomeRatio * 100).round()}% / '
-                '${((1 - incomeRatio) * 100).round()}%',
-                style: AppTypo.caption,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.smd),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.xs),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: (incomeRatio * 100).round(),
-                  child: Container(height: 8, color: AppColors.positive),
-                ),
-                Expanded(
-                  flex: ((1 - incomeRatio) * 100).round(),
-                  child: Container(height: 8, color: AppColors.negative),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              _Dot(color: AppColors.positive),
-              const SizedBox(width: 4),
-              Text('Receitas', style: AppTypo.caption),
-              const SizedBox(width: AppSpacing.smd + 2),
-              _Dot(color: AppColors.negative),
-              const SizedBox(width: 4),
-              Text('Despesas', style: AppTypo.caption),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Dot extends StatelessWidget {
-  final Color color;
-  const _Dot({required this.color});
-
-  @override
-  Widget build(BuildContext context) => Container(
-        width: 8,
-        height: 8,
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      );
-}
-
-// ─── Categories breakdown ─────────────────────────────────────────────────────
-
-class _CategoriesCard extends StatelessWidget {
-  final Map<TxCategory, double> categories;
-  final double total;
-
-  const _CategoriesCard({required this.categories, required this.total});
-
-  @override
-  Widget build(BuildContext context) {
-    final top = categories.entries.take(5).toList();
-    return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        children: top.asMap().entries.map((entry) {
-          final e = entry.value;
-          final pct = total > 0 ? e.value / total : 0.0;
-          final isLast = entry.key == top.length - 1;
-          return Padding(
-            padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.smd + 2),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: e.key.color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                      ),
-                      child: Icon(e.key.icon, color: e.key.color, size: 16),
-                    ),
-                    const SizedBox(width: AppSpacing.smd - 2),
-                    Expanded(
-                      child: Text(e.key.label,
-                          style: AppTypo.bodySmall.copyWith(
-                              fontWeight: FontWeight.w500)),
-                    ),
-                    Text('${(pct * 100).toStringAsFixed(1)}%',
-                        style: AppTypo.caption),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text(fmtBRL(e.value),
-                        style: AppTypo.bodySmall.copyWith(
-                            color: AppColors.negative,
-                            fontWeight: FontWeight.w600)),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: pct,
-                    backgroundColor: e.key.color.withValues(alpha: 0.1),
-                    valueColor: AlwaysStoppedAnimation(e.key.color),
-                    minHeight: 4,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
-// ─── TxRow (shared) ───────────────────────────────────────────────────────────
+// ─── TxRow (shared with transactions_screen) ──────────────────────────────────
 
 class TxRow extends StatelessWidget {
   final Transaction tx;
@@ -447,7 +478,8 @@ class TxRow extends StatelessWidget {
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: AppSpacing.screen),
+        padding:
+            const EdgeInsets.only(right: AppSpacing.screen),
         decoration: BoxDecoration(
           color: AppColors.negative.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -481,8 +513,8 @@ class TxRow extends StatelessWidget {
                 color: tx.category.color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
-              child: Icon(tx.category.icon,
-                  color: tx.category.color, size: 18),
+              child:
+                  Icon(tx.category.icon, color: tx.category.color, size: 18),
             ),
             const SizedBox(width: AppSpacing.smd),
             Expanded(
@@ -490,8 +522,8 @@ class TxRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(tx.title,
-                      style: AppTypo.body.copyWith(
-                          fontWeight: FontWeight.w500)),
+                      style:
+                          AppTypo.body.copyWith(fontWeight: FontWeight.w500)),
                   const SizedBox(height: 2),
                   Row(
                     children: [
