@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../models/transaction.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_typography.dart';
 import '../../widgets/add_transaction_sheet.dart';
-import '../../widgets/glass_container.dart';
+import '../../widgets/app_ui.dart';
 import '../../widgets/tool_scaffold.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -44,7 +46,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onPressed: () => showAddTransactionSheet(context, _store),
         icon: const Icon(Icons.add_rounded, color: Colors.white),
         label: Text('Novo lançamento',
-            style: GoogleFonts.inter(
+            style: AppTypo.body.copyWith(
                 color: Colors.white, fontWeight: FontWeight.w600)),
       ),
       content: ListenableBuilder(
@@ -59,43 +61,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final recent = _store.forMonth(y, m).take(5).toList();
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screen,
+                AppSpacing.smd,
+                AppSpacing.screen,
+                AppSpacing.hero + AppSpacing.xl),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _BalanceCard(
                     balance: balance, income: income, expense: expense),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.md),
                 _IncomeExpenseBar(income: income, expense: expense),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.lg),
                 if (cats.isNotEmpty) ...[
-                  _sectionLabel('Gastos por categoria'),
-                  const SizedBox(height: 10),
+                  const SectionLabel('GASTOS POR CATEGORIA'),
+                  const SizedBox(height: AppSpacing.smd),
                   _CategoriesCard(categories: cats, total: expense),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppSpacing.lg),
                 ],
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _sectionLabel('Últimas transações'),
-                    TextButton(
-                      onPressed: () => context.go('/app/transactions'),
-                      style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-                      child: Text('Ver todas →',
-                          style: GoogleFonts.inter(
-                              color: AppColors.accent1, fontSize: 13)),
-                    ),
-                  ],
+                SectionLabel(
+                  'ÚLTIMAS TRANSAÇÕES',
+                  trailing: TextButton(
+                    onPressed: () => context.go('/app/transactions'),
+                    style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap),
+                    child: Text('Ver todas →',
+                        style: AppTypo.bodySmall
+                            .copyWith(color: AppColors.accent1)),
+                  ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSpacing.smd),
                 if (recent.isEmpty)
                   _EmptyState()
                 else
-                  ...recent.map(
-                      (t) => TxRow(tx: t, onDelete: () => _store.remove(t.id))),
+                  ...recent.map((t) => TxRow(
+                      tx: t,
+                      onDelete: () => _store.remove(t.id))),
               ],
             ),
           );
@@ -103,15 +108,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-
-  Widget _sectionLabel(String text) => Text(
-        text,
-        style: GoogleFonts.inter(
-            color: AppColors.textSecondary,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.3),
-      );
 }
 
 // ─── Month selector ───────────────────────────────────────────────────────────
@@ -131,19 +127,12 @@ class MonthSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final isCurrent =
-        month.year == now.year && month.month == now.month;
+    final isCurrent = month.year == now.year && month.month == now.month;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         _NavBtn(icon: Icons.chevron_left_rounded, onTap: onPrev),
-        Text(
-          fmtMonth(month),
-          style: GoogleFonts.inter(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 14),
-        ),
+        Text(fmtMonth(month), style: AppTypo.bodyLarge),
         _NavBtn(
           icon: Icons.chevron_right_rounded,
           onTap: onNext,
@@ -158,7 +147,6 @@ class _NavBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final bool dimmed;
-
   const _NavBtn({required this.icon, required this.onTap, this.dimmed = false});
 
   @override
@@ -166,7 +154,7 @@ class _NavBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        padding: const EdgeInsets.all(AppSpacing.xs),
         child: Icon(icon,
             color: dimmed ? AppColors.glassBorder : AppColors.textSecondary,
             size: 22),
@@ -190,29 +178,23 @@ class _BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final positive = balance >= 0;
-    return GlassContainer(
-      padding: const EdgeInsets.all(20),
-      borderRadius: 22,
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      radius: AppRadius.xl,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Saldo do mês',
-              style: GoogleFonts.inter(
-                  color: AppColors.textSecondary, fontSize: 12)),
+          Text('Saldo do mês', style: AppTypo.bodySmall),
           const SizedBox(height: 4),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 fmtBRL(balance),
-                style: GoogleFonts.inter(
+                style: AppTypo.numberLarge.copyWith(
                   color: positive ? AppColors.positive : AppColors.negative,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.8,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Icon(
                 positive
                     ? Icons.arrow_upward_rounded
@@ -222,7 +204,7 @@ class _BalanceCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
           Row(
             children: [
               Expanded(
@@ -233,7 +215,7 @@ class _BalanceCard extends StatelessWidget {
                   icon: Icons.south_rounded,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.smd),
               Expanded(
                 child: _MiniTile(
                   label: 'Despesas',
@@ -256,19 +238,21 @@ class _MiniTile extends StatelessWidget {
   final Color color;
   final IconData icon;
 
-  const _MiniTile(
-      {required this.label,
-      required this.value,
-      required this.color,
-      required this.icon});
+  const _MiniTile({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.smd, vertical: AppSpacing.sm + 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
@@ -282,20 +266,16 @@ class _MiniTile extends StatelessWidget {
             ),
             child: Icon(icon, color: color, size: 14),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: GoogleFonts.inter(
-                        color: AppColors.textSecondary, fontSize: 11)),
+                Text(label, style: AppTypo.caption),
                 Text(
                   fmtBRL(value),
-                  style: GoogleFonts.inter(
-                      color: color,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700),
+                  style: AppTypo.bodySmall.copyWith(
+                      color: color, fontWeight: FontWeight.w700),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -321,60 +301,48 @@ class _IncomeExpenseBar extends StatelessWidget {
     if (total == 0) return const SizedBox.shrink();
     final incomeRatio = (income / total).clamp(0.01, 0.99);
 
-    return GlassContainer(
-      padding: const EdgeInsets.all(16),
-      borderRadius: 16,
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Receitas vs Despesas',
-                  style: GoogleFonts.inter(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600)),
+              Text('Receitas vs Despesas', style: AppTypo.label),
               Text(
                 '${(incomeRatio * 100).round()}% / '
                 '${((1 - incomeRatio) * 100).round()}%',
-                style: GoogleFonts.inter(
-                    color: AppColors.textSecondary, fontSize: 11),
+                style: AppTypo.caption,
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.smd),
           ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(AppRadius.xs),
             child: Row(
               children: [
                 Expanded(
                   flex: (incomeRatio * 100).round(),
-                  child: Container(
-                      height: 8, color: AppColors.positive),
+                  child: Container(height: 8, color: AppColors.positive),
                 ),
                 Expanded(
                   flex: ((1 - incomeRatio) * 100).round(),
-                  child: Container(
-                      height: 8, color: AppColors.negative),
+                  child: Container(height: 8, color: AppColors.negative),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               _Dot(color: AppColors.positive),
               const SizedBox(width: 4),
-              Text('Receitas',
-                  style: GoogleFonts.inter(
-                      color: AppColors.textSecondary, fontSize: 11)),
-              const SizedBox(width: 14),
+              Text('Receitas', style: AppTypo.caption),
+              const SizedBox(width: AppSpacing.smd + 2),
               _Dot(color: AppColors.negative),
               const SizedBox(width: 4),
-              Text('Despesas',
-                  style: GoogleFonts.inter(
-                      color: AppColors.textSecondary, fontSize: 11)),
+              Text('Despesas', style: AppTypo.caption),
             ],
           ),
         ],
@@ -391,8 +359,7 @@ class _Dot extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         width: 8,
         height: 8,
-        decoration:
-            BoxDecoration(color: color, shape: BoxShape.circle),
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       );
 }
 
@@ -402,22 +369,20 @@ class _CategoriesCard extends StatelessWidget {
   final Map<TxCategory, double> categories;
   final double total;
 
-  const _CategoriesCard(
-      {required this.categories, required this.total});
+  const _CategoriesCard({required this.categories, required this.total});
 
   @override
   Widget build(BuildContext context) {
     final top = categories.entries.take(5).toList();
-    return GlassContainer(
-      padding: const EdgeInsets.all(16),
-      borderRadius: 16,
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         children: top.asMap().entries.map((entry) {
           final e = entry.value;
           final pct = total > 0 ? e.value / total : 0.0;
           final isLast = entry.key == top.length - 1;
           return Padding(
-            padding: EdgeInsets.only(bottom: isLast ? 0 : 14),
+            padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.smd + 2),
             child: Column(
               children: [
                 Row(
@@ -427,33 +392,24 @@ class _CategoriesCard extends StatelessWidget {
                       height: 34,
                       decoration: BoxDecoration(
                         color: e.key.color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(9),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
-                      child: Icon(e.key.icon,
-                          color: e.key.color, size: 16),
+                      child: Icon(e.key.icon, color: e.key.color, size: 16),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSpacing.smd - 2),
                     Expanded(
                       child: Text(e.key.label,
-                          style: GoogleFonts.inter(
+                          style: AppTypo.bodySmall.copyWith(
                               color: Colors.white,
-                              fontSize: 13,
                               fontWeight: FontWeight.w500)),
                     ),
-                    Text(
-                      '${(pct * 100).toStringAsFixed(1)}%',
-                      style: GoogleFonts.inter(
-                          color: AppColors.textSecondary,
-                          fontSize: 12),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      fmtBRL(e.value),
-                      style: GoogleFonts.inter(
-                          color: AppColors.negative,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600),
-                    ),
+                    Text('${(pct * 100).toStringAsFixed(1)}%',
+                        style: AppTypo.caption),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(fmtBRL(e.value),
+                        style: AppTypo.bodySmall.copyWith(
+                            color: AppColors.negative,
+                            fontWeight: FontWeight.w600)),
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -461,8 +417,7 @@ class _CategoriesCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
                     value: pct,
-                    backgroundColor:
-                        e.key.color.withValues(alpha: 0.1),
+                    backgroundColor: e.key.color.withValues(alpha: 0.1),
                     valueColor: AlwaysStoppedAnimation(e.key.color),
                     minHeight: 4,
                   ),
@@ -492,22 +447,22 @@ class TxRow extends StatelessWidget {
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
+        padding: const EdgeInsets.only(right: AppSpacing.screen),
         decoration: BoxDecoration(
           color: AppColors.negative.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         child: const Icon(Icons.delete_outline_rounded,
             color: AppColors.negative),
       ),
       onDismissed: (_) => onDelete(),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.smd + 2, vertical: AppSpacing.smd),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(
               color: AppColors.glassBorder.withValues(alpha: 0.5)),
         ),
@@ -518,28 +473,23 @@ class TxRow extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 color: tx.category.color.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: Icon(tx.category.icon,
                   color: tx.category.color, size: 18),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.smd),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(tx.title,
-                      style: GoogleFonts.inter(
-                          color: Colors.white,
-                          fontSize: 14,
+                      style: AppTypo.body.copyWith(
                           fontWeight: FontWeight.w500)),
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      Text(tx.category.label,
-                          style: GoogleFonts.inter(
-                              color: AppColors.textSecondary,
-                              fontSize: 11)),
+                      Text(tx.category.label, style: AppTypo.caption),
                       const SizedBox(width: 6),
                       _AccountTag(tx.account),
                     ],
@@ -552,20 +502,15 @@ class TxRow extends StatelessWidget {
               children: [
                 Text(
                   '${isIncome ? '+' : '-'}${fmtBRL(tx.amount)}',
-                  style: GoogleFonts.inter(
+                  style: AppTypo.body.copyWith(
                     color: isIncome
                         ? AppColors.positive
                         : AppColors.negative,
-                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  fmtDateShort(tx.date),
-                  style: GoogleFonts.inter(
-                      color: AppColors.textSecondary, fontSize: 11),
-                ),
+                Text(fmtDateShort(tx.date), style: AppTypo.caption),
               ],
             ),
           ],
@@ -585,13 +530,10 @@ class _AccountTag extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
       decoration: BoxDecoration(
         color: AppColors.accent3.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(AppRadius.xs),
       ),
       child: Text(account,
-          style: GoogleFonts.inter(
-              color: AppColors.accent2,
-              fontSize: 10,
-              fontWeight: FontWeight.w700)),
+          style: AppTypo.labelSmall.copyWith(color: AppColors.accent2)),
     );
   }
 }
@@ -602,21 +544,19 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 36),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
       child: Center(
         child: Column(
           children: [
             Icon(Icons.receipt_long_rounded,
                 color: AppColors.glassBorder, size: 40),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.smd),
             Text('Nenhuma transação neste mês',
-                style: GoogleFonts.inter(
-                    color: AppColors.textSecondary, fontSize: 14)),
+                style: AppTypo.body
+                    .copyWith(color: AppColors.textSecondary)),
             const SizedBox(height: 4),
             Text('Toque em "Novo lançamento" para começar',
-                style: GoogleFonts.inter(
-                    color: AppColors.textSecondary.withValues(alpha: 0.5),
-                    fontSize: 12)),
+                style: AppTypo.caption),
           ],
         ),
       ),
