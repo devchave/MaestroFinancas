@@ -75,28 +75,30 @@ class AppButton extends StatelessWidget {
           opacity: disabled ? 0.5 : 1,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: AppColors.accentGradient,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
               borderRadius: BorderRadius.circular(AppRadius.md),
               boxShadow: disabled
                   ? null
                   : [
                       BoxShadow(
-                        color: AppColors.accent1.withValues(alpha: 0.3),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
+                        color: AppColors.accent1.withValues(alpha: 0.35),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
                       ),
                     ],
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: disabled ? null : onPressed,
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                child: Padding(padding: padding, child: Center(child: inner)),
+            child: LiquidGlass(
+              tint: AppColors.accent1,
+              tintStrength: 1.4,
+              radius: AppRadius.md,
+              blur: 16,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: disabled ? null : onPressed,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  child:
+                      Padding(padding: padding, child: Center(child: inner)),
+                ),
               ),
             ),
           ),
@@ -105,18 +107,16 @@ class AppButton extends StatelessWidget {
       case AppButtonVariant.secondary:
         return Opacity(
           opacity: disabled ? 0.5 : 1,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: AppColors.glassWhite,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(color: AppColors.glassBorder),
-            ),
+          child: LiquidGlass(
+            radius: AppRadius.md,
+            blur: 14,
             child: Material(
               color: Colors.transparent,
               child: InkWell(
                 onTap: disabled ? null : onPressed,
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                child: Padding(padding: padding, child: Center(child: inner)),
+                child:
+                    Padding(padding: padding, child: Center(child: inner)),
               ),
             ),
           ),
@@ -333,15 +333,40 @@ class StatusChip extends StatelessWidget {
       ],
     );
 
-    final chip = Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.smd, vertical: 7),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: border, width: selected ? 1.2 : 1),
+    final chip = ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.smd, vertical: 7),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(color: border, width: selected ? 1.2 : 1),
+        ),
+        child: Stack(
+          children: [
+            // Rim sutil no topo (consistência com Liquid Glass)
+            Positioned(
+              top: 0,
+              left: AppSpacing.smd,
+              right: AppSpacing.smd,
+              child: Container(
+                height: 1,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.white.withValues(alpha: 0),
+                      Colors.white.withValues(alpha: selected ? 0.5 : 0.3),
+                      Colors.white.withValues(alpha: 0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            inner,
+          ],
+        ),
       ),
-      child: inner,
     );
 
     return onTap == null
