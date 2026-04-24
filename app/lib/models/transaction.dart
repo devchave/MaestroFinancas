@@ -153,6 +153,17 @@ class Transaction {
   }
 }
 
+// ─── Month summary ────────────────────────────────────────────────────────────
+
+class MonthSummary {
+  final DateTime month;
+  final double income;
+  final double expense;
+  const MonthSummary(
+      {required this.month, required this.income, required this.expense});
+  double get balance => income - expense;
+}
+
 // ─── Singleton store ──────────────────────────────────────────────────────────
 
 class TransactionStore extends ChangeNotifier {
@@ -200,6 +211,36 @@ class TransactionStore extends ChangeNotifier {
     );
   }
 
+  Map<TxCategory, double> incomesByCategory(int y, int m) {
+    final map = <TxCategory, double>{};
+    for (final t in forMonth(y, m).where((t) => t.type == TxType.income)) {
+      map[t.category] = (map[t.category] ?? 0) + t.amount;
+    }
+    return Map.fromEntries(
+      map.entries.toList()..sort((a, b) => b.value.compareTo(a.value)),
+    );
+  }
+
+  List<MonthSummary> monthlySeries({
+    int lastMonths = 6,
+    bool Function(Transaction)? filter,
+  }) {
+    final now = DateTime.now();
+    return List.generate(lastMonths, (i) {
+      final dt =
+          DateTime(now.year, now.month - (lastMonths - 1 - i));
+      var txs = forMonth(dt.year, dt.month);
+      if (filter != null) txs = txs.where(filter).toList();
+      final inc = txs
+          .where((t) => t.type == TxType.income)
+          .fold(0.0, (s, t) => s + t.amount);
+      final exp = txs
+          .where((t) => t.type == TxType.expense)
+          .fold(0.0, (s, t) => s + t.amount);
+      return MonthSummary(month: dt, income: inc, expense: exp);
+    });
+  }
+
   /// Movimentação líquida de uma conta até agora (income - expense).
   double netFlowForAccount(String accountId) {
     double net = 0;
@@ -216,37 +257,127 @@ List<Transaction> _seed() {
   final now = DateTime.now();
   final y = now.year;
   final m = now.month;
-  // IDs de conta vêm de finance.dart:
-  //   a1 Nubank PF, a2 Itaú PF, a3 Inter Poupança PF
-  //   a4 Itaú Chavemestre (c1), a5 BTG CDB Chavemestre (c1), a6 Inter DevChave (c2)
-  // IDs de cartão: card1 (Nubank), card2 (Itaú), card3 (Inter PJ)
+
+  // Helper: create a transaction with a month offset (0 = current, 1 = last, etc.)
+  Transaction tx(
+    String id,
+    String title,
+    double amount,
+    TxType type,
+    TxCategory cat,
+    int mo,
+    int day,
+    String acc, {
+    String? card,
+  }) {
+    return Transaction(
+      id: id,
+      title: title,
+      amount: amount,
+      type: type,
+      category: cat,
+      date: DateTime(y, m - mo, day),
+      accountId: acc,
+      cardId: card,
+    );
+  }
+
   return [
-    Transaction(id: '1', title: 'Salário', amount: 8500, type: TxType.income,
-        category: TxCategory.salary, date: DateTime(y, m, 5), accountId: 'a1'),
-    Transaction(id: '2', title: 'Projeto freelance', amount: 2200, type: TxType.income,
-        category: TxCategory.freelance, date: DateTime(y, m, 8), accountId: 'a2'),
-    Transaction(id: '3', title: 'Faturamento empresa', amount: 12000, type: TxType.income,
-        category: TxCategory.sales, date: DateTime(y, m, 10), accountId: 'a4'),
-    Transaction(id: '4', title: 'Aluguel apartamento', amount: 1800, type: TxType.expense,
-        category: TxCategory.housing, date: DateTime(y, m, 1), accountId: 'a2'),
-    Transaction(id: '5', title: 'Supermercado', amount: 650, type: TxType.expense,
-        category: TxCategory.food, date: DateTime(y, m, 3), accountId: 'a1', cardId: 'card1'),
-    Transaction(id: '6', title: 'Uber / combustível', amount: 320, type: TxType.expense,
-        category: TxCategory.transport, date: DateTime(y, m, 7), accountId: 'a1', cardId: 'card1'),
-    Transaction(id: '7', title: 'Plano de saúde', amount: 480, type: TxType.expense,
-        category: TxCategory.health, date: DateTime(y, m, 5), accountId: 'a2'),
-    Transaction(id: '8', title: 'Fornecedores', amount: 3200, type: TxType.expense,
-        category: TxCategory.others, date: DateTime(y, m, 12), accountId: 'a4', cardId: 'card3'),
-    Transaction(id: '9', title: 'Folha de pagamento', amount: 4500, type: TxType.expense,
-        category: TxCategory.payroll, date: DateTime(y, m, 5), accountId: 'a4'),
-    Transaction(id: '10', title: 'Restaurante', amount: 180, type: TxType.expense,
-        category: TxCategory.food, date: DateTime(y, m, 15), accountId: 'a1', cardId: 'card1'),
-    Transaction(id: '11', title: 'Netflix / streaming', amount: 85, type: TxType.expense,
-        category: TxCategory.entertainment, date: DateTime(y, m, 10), accountId: 'a1', cardId: 'card1'),
-    Transaction(id: '12', title: 'Curso online', amount: 297, type: TxType.expense,
-        category: TxCategory.education, date: DateTime(y, m, 18), accountId: 'a2', cardId: 'card2'),
-    Transaction(id: '13', title: 'DAS Simples Nacional', amount: 420, type: TxType.expense,
-        category: TxCategory.taxes, date: DateTime(y, m, 20), accountId: 'a4'),
+    // ── Mês atual ────────────────────────────────────────────────────────────
+    // income: 8500 + 2200 + 12000 = 22700 | expense ≈ 11932
+    tx('1',  'Salário',            8500,  TxType.income,  TxCategory.salary,        0, 5,  'a1'),
+    tx('2',  'Projeto freelance',  2200,  TxType.income,  TxCategory.freelance,     0, 8,  'a2'),
+    tx('3',  'Faturamento empresa',12000, TxType.income,  TxCategory.sales,         0, 10, 'a4'),
+    tx('4',  'Aluguel apartamento',1800,  TxType.expense, TxCategory.housing,       0, 1,  'a2'),
+    tx('5',  'Supermercado',       650,   TxType.expense, TxCategory.food,          0, 3,  'a1', card: 'card1'),
+    tx('6',  'Uber / combustível', 320,   TxType.expense, TxCategory.transport,     0, 7,  'a1', card: 'card1'),
+    tx('7',  'Plano de saúde',     480,   TxType.expense, TxCategory.health,        0, 5,  'a2'),
+    tx('8',  'Fornecedores',       3200,  TxType.expense, TxCategory.others,        0, 12, 'a4', card: 'card3'),
+    tx('9',  'Folha de pagamento', 4500,  TxType.expense, TxCategory.payroll,       0, 5,  'a4'),
+    tx('10', 'Restaurante',        180,   TxType.expense, TxCategory.food,          0, 15, 'a1', card: 'card1'),
+    tx('11', 'Netflix / streaming',85,    TxType.expense, TxCategory.entertainment, 0, 10, 'a1', card: 'card1'),
+    tx('12', 'Curso online',       297,   TxType.expense, TxCategory.education,     0, 18, 'a2', card: 'card2'),
+    tx('13', 'DAS Simples Nacional',420,  TxType.expense, TxCategory.taxes,         0, 20, 'a4'),
+
+    // ── Mês -1 ───────────────────────────────────────────────────────────────
+    // income: 8500 + 1800 + 11800 = 22100 | expense ≈ 11275
+    tx('b1',  'Salário',            8500,  TxType.income,  TxCategory.salary,        1, 5,  'a1'),
+    tx('b2',  'Projeto freelance',  1800,  TxType.income,  TxCategory.freelance,     1, 8,  'a2'),
+    tx('b3',  'Faturamento empresa',11800, TxType.income,  TxCategory.sales,         1, 10, 'a4'),
+    tx('b4',  'Aluguel apartamento',1800,  TxType.expense, TxCategory.housing,       1, 1,  'a2'),
+    tx('b5',  'Supermercado',       560,   TxType.expense, TxCategory.food,          1, 3,  'a1', card: 'card1'),
+    tx('b6',  'Uber / combustível', 290,   TxType.expense, TxCategory.transport,     1, 7,  'a1', card: 'card1'),
+    tx('b7',  'Plano de saúde',     480,   TxType.expense, TxCategory.health,        1, 5,  'a2'),
+    tx('b8',  'Fornecedores',       2800,  TxType.expense, TxCategory.others,        1, 12, 'a4', card: 'card3'),
+    tx('b9',  'Folha de pagamento', 4500,  TxType.expense, TxCategory.payroll,       1, 5,  'a4'),
+    tx('b10', 'Restaurante',        220,   TxType.expense, TxCategory.food,          1, 15, 'a1', card: 'card1'),
+    tx('b11', 'Netflix / streaming',85,    TxType.expense, TxCategory.entertainment, 1, 10, 'a1', card: 'card1'),
+    tx('b12', 'Curso online',       150,   TxType.expense, TxCategory.education,     1, 18, 'a2', card: 'card2'),
+    tx('b13', 'DAS Simples Nacional',390,  TxType.expense, TxCategory.taxes,         1, 20, 'a4'),
+
+    // ── Mês -2 ───────────────────────────────────────────────────────────────
+    // income: 8200 + 2500 + 10500 = 21200 | expense ≈ 10807
+    tx('c1',  'Salário',            8200,  TxType.income,  TxCategory.salary,        2, 5,  'a1'),
+    tx('c2',  'Projeto freelance',  2500,  TxType.income,  TxCategory.freelance,     2, 8,  'a2'),
+    tx('c3',  'Faturamento empresa',10500, TxType.income,  TxCategory.sales,         2, 10, 'a4'),
+    tx('c4',  'Aluguel apartamento',1800,  TxType.expense, TxCategory.housing,       2, 1,  'a2'),
+    tx('c5',  'Supermercado',       520,   TxType.expense, TxCategory.food,          2, 3,  'a1', card: 'card1'),
+    tx('c6',  'Uber / combustível', 350,   TxType.expense, TxCategory.transport,     2, 7,  'a1', card: 'card1'),
+    tx('c7',  'Plano de saúde',     480,   TxType.expense, TxCategory.health,        2, 5,  'a2'),
+    tx('c8',  'Fornecedores',       2500,  TxType.expense, TxCategory.others,        2, 12, 'a4', card: 'card3'),
+    tx('c9',  'Folha de pagamento', 4200,  TxType.expense, TxCategory.payroll,       2, 5,  'a4'),
+    tx('c10', 'Restaurante',        200,   TxType.expense, TxCategory.food,          2, 15, 'a1', card: 'card1'),
+    tx('c11', 'Netflix / streaming',110,   TxType.expense, TxCategory.entertainment, 2, 10, 'a1', card: 'card1'),
+    tx('c12', 'Curso online',       297,   TxType.expense, TxCategory.education,     2, 18, 'a2', card: 'card2'),
+    tx('c13', 'DAS Simples Nacional',350,  TxType.expense, TxCategory.taxes,         2, 20, 'a4'),
+
+    // ── Mês -3 ───────────────────────────────────────────────────────────────
+    // income: 8200 + 3200 + 9800 = 21200 | expense ≈ 10205
+    tx('d1',  'Salário',            8200,  TxType.income,  TxCategory.salary,        3, 5,  'a1'),
+    tx('d2',  'Projeto freelance',  3200,  TxType.income,  TxCategory.freelance,     3, 8,  'a2'),
+    tx('d3',  'Faturamento empresa',9800,  TxType.income,  TxCategory.sales,         3, 10, 'a4'),
+    tx('d4',  'Aluguel apartamento',1800,  TxType.expense, TxCategory.housing,       3, 1,  'a2'),
+    tx('d5',  'Supermercado',       490,   TxType.expense, TxCategory.food,          3, 3,  'a1', card: 'card1'),
+    tx('d6',  'Uber / combustível', 280,   TxType.expense, TxCategory.transport,     3, 7,  'a1', card: 'card1'),
+    tx('d7',  'Plano de saúde',     480,   TxType.expense, TxCategory.health,        3, 5,  'a2'),
+    tx('d8',  'Fornecedores',       2200,  TxType.expense, TxCategory.others,        3, 12, 'a4', card: 'card3'),
+    tx('d9',  'Folha de pagamento', 4200,  TxType.expense, TxCategory.payroll,       3, 5,  'a4'),
+    tx('d10', 'Restaurante',        200,   TxType.expense, TxCategory.food,          3, 15, 'a1', card: 'card1'),
+    tx('d11', 'Netflix / streaming',85,    TxType.expense, TxCategory.entertainment, 3, 10, 'a1', card: 'card1'),
+    tx('d12', 'Curso online',       150,   TxType.expense, TxCategory.education,     3, 18, 'a2', card: 'card2'),
+    tx('d13', 'DAS Simples Nacional',320,  TxType.expense, TxCategory.taxes,         3, 20, 'a4'),
+
+    // ── Mês -4 ───────────────────────────────────────────────────────────────
+    // income: 8000 + 1200 + 9500 = 18700 | expense ≈ 9775
+    tx('e1',  'Salário',            8000,  TxType.income,  TxCategory.salary,        4, 5,  'a1'),
+    tx('e2',  'Projeto freelance',  1200,  TxType.income,  TxCategory.freelance,     4, 8,  'a2'),
+    tx('e3',  'Faturamento empresa',9500,  TxType.income,  TxCategory.sales,         4, 10, 'a4'),
+    tx('e4',  'Aluguel apartamento',1800,  TxType.expense, TxCategory.housing,       4, 1,  'a2'),
+    tx('e5',  'Supermercado',       470,   TxType.expense, TxCategory.food,          4, 3,  'a1', card: 'card1'),
+    tx('e6',  'Uber / combustível', 310,   TxType.expense, TxCategory.transport,     4, 7,  'a1', card: 'card1'),
+    tx('e7',  'Plano de saúde',     480,   TxType.expense, TxCategory.health,        4, 5,  'a2'),
+    tx('e8',  'Fornecedores',       2000,  TxType.expense, TxCategory.others,        4, 12, 'a4', card: 'card3'),
+    tx('e9',  'Folha de pagamento', 4000,  TxType.expense, TxCategory.payroll,       4, 5,  'a4'),
+    tx('e10', 'Restaurante',        190,   TxType.expense, TxCategory.food,          4, 15, 'a1', card: 'card1'),
+    tx('e11', 'Netflix / streaming',85,    TxType.expense, TxCategory.entertainment, 4, 10, 'a1', card: 'card1'),
+    tx('e12', 'Curso online',       150,   TxType.expense, TxCategory.education,     4, 18, 'a2', card: 'card2'),
+    tx('e13', 'DAS Simples Nacional',290,  TxType.expense, TxCategory.taxes,         4, 20, 'a4'),
+
+    // ── Mês -5 ───────────────────────────────────────────────────────────────
+    // income: 8000 + 900 + 8500 = 17400 | expense ≈ 9515
+    tx('f1',  'Salário',            8000,  TxType.income,  TxCategory.salary,        5, 5,  'a1'),
+    tx('f2',  'Projeto freelance',  900,   TxType.income,  TxCategory.freelance,     5, 8,  'a2'),
+    tx('f3',  'Faturamento empresa',8500,  TxType.income,  TxCategory.sales,         5, 10, 'a4'),
+    tx('f4',  'Aluguel apartamento',1800,  TxType.expense, TxCategory.housing,       5, 1,  'a2'),
+    tx('f5',  'Supermercado',       450,   TxType.expense, TxCategory.food,          5, 3,  'a1', card: 'card1'),
+    tx('f6',  'Uber / combustível', 300,   TxType.expense, TxCategory.transport,     5, 7,  'a1', card: 'card1'),
+    tx('f7',  'Plano de saúde',     480,   TxType.expense, TxCategory.health,        5, 5,  'a2'),
+    tx('f8',  'Fornecedores',       1800,  TxType.expense, TxCategory.others,        5, 12, 'a4', card: 'card3'),
+    tx('f9',  'Folha de pagamento', 4000,  TxType.expense, TxCategory.payroll,       5, 5,  'a4'),
+    tx('f10', 'Restaurante',        190,   TxType.expense, TxCategory.food,          5, 15, 'a1', card: 'card1'),
+    tx('f11', 'Netflix / streaming',85,    TxType.expense, TxCategory.entertainment, 5, 10, 'a1', card: 'card1'),
+    tx('f12', 'Curso online',       150,   TxType.expense, TxCategory.education,     5, 18, 'a2', card: 'card2'),
+    tx('f13', 'DAS Simples Nacional',260,  TxType.expense, TxCategory.taxes,         5, 20, 'a4'),
   ];
 }
 
