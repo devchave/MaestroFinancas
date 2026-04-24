@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../models/app_tool.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
 import 'animated_background.dart';
+import 'app_ui.dart';
 import 'version_badge.dart';
 
 const _kCollapsed = 64.0;
@@ -11,8 +14,8 @@ const _kExpanded = 240.0;
 const _kDesktopBreak = 900.0;
 
 /// Scaffold compartilhado por todas as telas de ferramenta.
-/// Desktop (≥900px): sidebar permanente colapsável via hamburger interno.
-/// Mobile (<900px): sidebar vira Drawer abrível pelo hamburger no top bar.
+/// Desktop (≥900px): sidebar permanente colapsável via hamburger.
+/// Mobile (<900px): sidebar vira Drawer abrível pelo hamburger do top bar.
 class ToolScaffold extends StatefulWidget {
   final String toolId;
   final Widget content;
@@ -55,9 +58,7 @@ class _ToolScaffoldState extends State<ToolScaffold> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: AppColors.bg1,
-      drawer: isDesktop
-          ? null
-          : _MobileDrawer(currentId: widget.toolId),
+      drawer: isDesktop ? null : _MobileDrawer(currentId: widget.toolId),
       floatingActionButton: widget.floatingActionButton,
       body: AnimatedBackground(
         child: SafeArea(
@@ -126,7 +127,8 @@ class _DesktopSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF070C14),
+      // Tom levemente mais escuro que bg1 para criar profundidade
+      color: const Color(0xFF060A14),
       child: Column(
         children: [
           // Hamburger header
@@ -136,7 +138,7 @@ class _DesktopSidebar extends StatelessWidget {
               height: 52,
               child: Padding(
                 padding: EdgeInsets.symmetric(
-                    horizontal: expanded ? 16 : 0),
+                    horizontal: expanded ? AppSpacing.md : 0),
                 child: Row(
                   mainAxisAlignment: expanded
                       ? MainAxisAlignment.start
@@ -145,30 +147,21 @@ class _DesktopSidebar extends StatelessWidget {
                     const Icon(Icons.menu_rounded,
                         color: AppColors.textSecondary, size: 22),
                     if (expanded) ...[
-                      const SizedBox(width: 12),
-                      Text(
-                        'Maestro',
-                        style: GoogleFonts.inter(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
+                      const SizedBox(width: AppSpacing.smd),
+                      Text('Maestro', style: AppTypo.titleSmall),
                     ],
                   ],
                 ),
               ),
             ),
           ),
-          const Divider(height: 1, color: AppColors.glassBorder),
-          const SizedBox(height: 4),
+          const AppDivider(),
+          const SizedBox(height: AppSpacing.xs),
 
-          // Tools list
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(
-                  horizontal: 6, vertical: 2),
+                  horizontal: AppSpacing.xs + 2, vertical: 2),
               children: appTools.map((tool) {
                 return _SidebarItem(
                   tool: tool,
@@ -180,18 +173,16 @@ class _DesktopSidebar extends StatelessWidget {
             ),
           ),
 
-          // Home button
-          const Divider(height: 1, color: AppColors.glassBorder),
+          const AppDivider(),
           _HomeItem(
             expanded: expanded,
             onTap: () => context.go('/app'),
           ),
-          if (expanded) ...[
+          if (expanded)
             const Padding(
-              padding: EdgeInsets.only(bottom: 8),
+              padding: EdgeInsets.only(bottom: AppSpacing.sm),
               child: VersionBadge(fontSize: 9),
             ),
-          ],
         ],
       ),
     );
@@ -208,51 +199,35 @@ class _MobileDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: const Color(0xFF070C14),
+      backgroundColor: const Color(0xFF060A14),
       child: SafeArea(
         child: Column(
           children: [
-            // Header
+            // Header com brand
             Container(
               height: 60,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
               child: Row(
                 children: [
-                  Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: AppColors.accentGradient,
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                        Icons.account_balance_wallet_rounded,
-                        color: Colors.white,
-                        size: 16),
+                  const AppIconBadge(
+                    icon: Icons.account_balance_wallet_rounded,
+                    color: AppColors.accent1,
+                    size: 30,
+                    iconSize: 16,
                   ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Maestro Finanças',
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                    ),
-                  ),
+                  const SizedBox(width: AppSpacing.smd),
+                  Text('Maestro Finanças', style: AppTypo.titleSmall),
                 ],
               ),
             ),
-            const Divider(height: 1, color: AppColors.glassBorder),
-            const SizedBox(height: 4),
+            const AppDivider(),
+            const SizedBox(height: AppSpacing.xs),
 
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 2),
+                    horizontal: AppSpacing.sm, vertical: 2),
                 children: appTools.map((tool) {
                   return _SidebarItem(
                     tool: tool,
@@ -267,7 +242,7 @@ class _MobileDrawer extends StatelessWidget {
               ),
             ),
 
-            const Divider(height: 1, color: AppColors.glassBorder),
+            const AppDivider(),
             _HomeItem(
               expanded: true,
               onTap: () {
@@ -276,7 +251,7 @@ class _MobileDrawer extends StatelessWidget {
               },
             ),
             const Padding(
-              padding: EdgeInsets.only(bottom: 8),
+              padding: EdgeInsets.only(bottom: AppSpacing.sm),
               child: VersionBadge(fontSize: 9),
             ),
           ],
@@ -308,14 +283,14 @@ class _SidebarItem extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 1),
         padding: EdgeInsets.symmetric(
-          horizontal: expanded ? 10 : 0,
-          vertical: 10,
+          horizontal: expanded ? AppSpacing.smd : 0,
+          vertical: AppSpacing.smd - 2,
         ),
         decoration: BoxDecoration(
           color: active
               ? tool.color.withValues(alpha: 0.15)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           border: Border.all(
             color: active
                 ? tool.color.withValues(alpha: 0.3)
@@ -333,15 +308,14 @@ class _SidebarItem extends StatelessWidget {
               size: 20,
             ),
             if (expanded) ...[
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.smd),
               Expanded(
                 child: Text(
                   tool.name,
-                  style: GoogleFonts.inter(
+                  style: AppTypo.bodySmall.copyWith(
                     color: active
                         ? Colors.white
                         : AppColors.textSecondary,
-                    fontSize: 13,
                     fontWeight: active
                         ? FontWeight.w600
                         : FontWeight.w400,
@@ -370,14 +344,14 @@ class _HomeItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.all(6),
+        margin: const EdgeInsets.all(AppSpacing.xs + 2),
         padding: EdgeInsets.symmetric(
-          horizontal: expanded ? 10 : 0,
-          vertical: 11,
+          horizontal: expanded ? AppSpacing.smd : 0,
+          vertical: AppSpacing.smd - 1,
         ),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           border: Border.all(color: AppColors.glassBorder),
         ),
         child: Row(
@@ -388,13 +362,12 @@ class _HomeItem extends StatelessWidget {
             const Icon(Icons.apps_rounded,
                 color: AppColors.accent1, size: 20),
             if (expanded) ...[
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.smd),
               Expanded(
                 child: Text(
                   'Todos os apps',
-                  style: GoogleFonts.inter(
+                  style: AppTypo.bodySmall.copyWith(
                     color: AppColors.accent1,
-                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -425,11 +398,10 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xs, vertical: AppSpacing.xs),
       decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.glassBorder),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.glassBorder)),
       ),
       child: Row(
         children: [
@@ -441,35 +413,18 @@ class _TopBar extends StatelessWidget {
               tooltip: 'Menu',
             )
           else
-            const SizedBox(width: 16),
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  tool.color,
-                  tool.color.withValues(alpha: 0.7)
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(tool.icon, color: Colors.white, size: 16),
+            const SizedBox(width: AppSpacing.md),
+          AppIconBadge(
+            icon: tool.icon,
+            color: tool.color,
+            size: 30,
+            iconSize: 16,
           ),
-          const SizedBox(width: 10),
-          Text(
-            tool.name,
-            style: GoogleFonts.inter(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-            ),
-          ),
+          const SizedBox(width: AppSpacing.smd),
+          Text(tool.name, style: AppTypo.titleSmall),
           const Spacer(),
           if (trailing != null) trailing!,
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
         ],
       ),
     );
