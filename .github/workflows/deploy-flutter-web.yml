@@ -1,0 +1,54 @@
+name: Build & Deploy Flutter Web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/lib/**'
+      - 'app/pubspec.yaml'
+      - 'app/pubspec.lock'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Flutter pub get
+        working-directory: app
+        run: flutter pub get
+
+      - name: Build web
+        working-directory: app
+        run: flutter build web --release --base-href /
+
+      - name: Copy build to dist/
+        run: |
+          rm -rf dist/web
+          mkdir -p dist/web
+          cp -r app/build/web/. dist/web/
+
+      - name: Commit dist to main
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(dist): update Flutter web build [skip ci]"
+          file_pattern: dist/web/**
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1
+        if: ${{ secrets.VPS_HOST != '' }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /srv/maestro
+            git pull origin main
+            cp -r dist/web/* /srv/maestro/app/web/
+            systemctl reload nginx
