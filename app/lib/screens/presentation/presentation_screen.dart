@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/animated_background.dart';
 import '../../widgets/glass_container.dart';
+import '../../widgets/version_badge.dart';
 
 class PresentationScreen extends StatelessWidget {
   const PresentationScreen({super.key});
@@ -139,6 +140,10 @@ class PresentationScreen extends StatelessWidget {
                         ),
                       ),
                     ).animate().fadeIn(delay: 1000.ms),
+                    const SizedBox(height: 28),
+                    const VersionBadge()
+                        .animate()
+                        .fadeIn(delay: 1200.ms),
                   ],
                 ),
               ),

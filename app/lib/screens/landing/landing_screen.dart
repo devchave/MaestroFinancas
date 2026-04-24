@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/brand_name.dart';
 import '../../widgets/glass_container.dart';
+import '../../widgets/version_badge.dart';
 
 class LandingScreen extends StatelessWidget {
   const LandingScreen({super.key});
@@ -1151,6 +1152,8 @@ class _Footer extends StatelessWidget {
               letterSpacing: 0.3,
             ),
           ),
+          const SizedBox(height: 10),
+          const VersionBadge(),
         ],
       ),
     );

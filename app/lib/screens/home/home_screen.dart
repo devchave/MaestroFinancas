@@ -6,6 +6,7 @@ import '../../models/app_tool.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/animated_background.dart';
 import '../../widgets/glass_container.dart';
+import '../../widgets/version_badge.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -119,7 +120,9 @@ class _HomeScreenState extends State<HomeScreen> {
               // Dock
               _Dock(),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
+              const VersionBadge(),
+              const SizedBox(height: 10),
             ],
           ),
         ),

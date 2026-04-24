@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/app_tool.dart';
 import '../theme/app_colors.dart';
 import 'animated_background.dart';
+import 'version_badge.dart';
 
 const _kCollapsed = 64.0;
 const _kExpanded = 240.0;
@@ -185,6 +186,12 @@ class _DesktopSidebar extends StatelessWidget {
             expanded: expanded,
             onTap: () => context.go('/home'),
           ),
+          if (expanded) ...[
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: VersionBadge(fontSize: 9),
+            ),
+          ],
         ],
       ),
     );
@@ -267,6 +274,10 @@ class _MobileDrawer extends StatelessWidget {
                 Navigator.pop(context);
                 context.go('/home');
               },
+            ),
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: VersionBadge(fontSize: 9),
             ),
           ],
         ),

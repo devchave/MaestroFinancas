@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/animated_background.dart';
 import '../../widgets/glass_container.dart';
+import '../../widgets/version_badge.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -269,6 +270,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ).animate().fadeIn(delay: 600.ms),
+                    const SizedBox(height: 20),
+                    const VersionBadge().animate().fadeIn(delay: 800.ms),
                   ],
                 ),
               ),
