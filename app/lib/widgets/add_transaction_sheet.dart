@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../models/transaction.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
+import 'app_ui.dart';
 
 void showAddTransactionSheet(BuildContext context, TransactionStore store) {
   showModalBottomSheet(
@@ -64,27 +67,33 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
     return Container(
       margin: const EdgeInsets.only(top: 60),
       padding: EdgeInsets.only(bottom: bottom),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0D1B2A),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(top: BorderSide(color: AppColors.glassBorder)),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D1B2A),
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
+        border: const Border(top: BorderSide(color: AppColors.glassBorder)),
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screen,
+            AppSpacing.md,
+            AppSpacing.screen,
+            AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Handle
             Center(
               child: Container(
-                width: 36, height: 4,
+                width: 36,
+                height: 4,
                 decoration: BoxDecoration(
                   color: AppColors.glassBorder,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: AppSpacing.md + 2),
 
             // Type toggle
             Row(
@@ -101,7 +110,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                     }),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.smd),
                 Expanded(
                   child: _TypeBtn(
                     label: 'Receita',
@@ -116,217 +125,142 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.lg),
 
             // Amount
             TextField(
               controller: _amountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               textAlign: TextAlign.center,
               autofocus: true,
-              style: GoogleFonts.inter(
-                  color: Colors.white, fontSize: 36, fontWeight: FontWeight.w800),
+              style: AppTypo.display.copyWith(fontSize: 36),
               decoration: InputDecoration(
                 hintText: '0,00',
-                hintStyle: GoogleFonts.inter(
-                    color: AppColors.glassBorder,
-                    fontSize: 36,
-                    fontWeight: FontWeight.w800),
+                hintStyle: AppTypo.display.copyWith(
+                    fontSize: 36, color: AppColors.glassBorder),
                 prefixText: 'R\$ ',
-                prefixStyle: GoogleFonts.inter(
-                    color: AppColors.textSecondary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w600),
+                prefixStyle: AppTypo.title
+                    .copyWith(color: AppColors.textSecondary),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
               ),
               onChanged: (_) => setState(() {}),
             ),
-            const Divider(color: AppColors.glassBorder, height: 1),
-            const SizedBox(height: 16),
+            const AppDivider(),
+            const SizedBox(height: AppSpacing.md),
 
             // Description
-            TextField(
+            AppTextField(
               controller: _titleCtrl,
-              style: GoogleFonts.inter(color: Colors.white, fontSize: 15),
-              decoration: InputDecoration(
-                labelText: 'Descrição',
-                labelStyle: GoogleFonts.inter(color: AppColors.textSecondary),
-                prefixIcon: const Icon(Icons.edit_rounded,
-                    color: AppColors.textSecondary, size: 18),
-                filled: true,
-                fillColor: AppColors.glassWhite,
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.glassBorder)),
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.glassBorder)),
-                focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: AppColors.accent1, width: 1.5)),
-              ),
+              label: 'Descrição',
+              icon: Icons.edit_rounded,
               onChanged: (_) => setState(() {}),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
             // Category
-            Text('Categoria',
-                style: GoogleFonts.inter(
-                    color: AppColors.textSecondary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600)),
-            const SizedBox(height: 10),
+            Text('Categoria', style: AppTypo.label),
+            const SizedBox(height: AppSpacing.smd - 2),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
               children: _cats.map((cat) {
-                final sel = _category == cat;
-                return GestureDetector(
+                return StatusChip(
+                  label: cat.label,
+                  icon: cat.icon,
+                  color: cat.color,
+                  selected: _category == cat,
                   onTap: () => setState(() => _category = cat),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: sel
-                          ? cat.color.withValues(alpha: 0.22)
-                          : AppColors.glassWhite,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: sel ? cat.color : AppColors.glassBorder,
-                        width: sel ? 1.5 : 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(cat.icon,
-                            color: sel ? cat.color : AppColors.textSecondary,
-                            size: 15),
-                        const SizedBox(width: 5),
-                        Text(
-                          cat.label,
-                          style: GoogleFonts.inter(
-                            color:
-                                sel ? cat.color : AppColors.textSecondary,
-                            fontSize: 12,
-                            fontWeight:
-                                sel ? FontWeight.w600 : FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 );
               }).toList(),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
             // Date + Account
             Row(
               children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: _date,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime.now(),
-                        builder: (context, child) =>
-                            Theme(data: ThemeData.dark(), child: child!),
-                      );
-                      if (picked != null) setState(() => _date = picked);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 13),
-                      decoration: BoxDecoration(
-                        color: AppColors.glassWhite,
-                        borderRadius: BorderRadius.circular(12),
-                        border:
-                            Border.all(color: AppColors.glassBorder),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.calendar_today_rounded,
-                              color: AppColors.textSecondary, size: 16),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${_date.day.toString().padLeft(2, '0')}/'
-                            '${_date.month.toString().padLeft(2, '0')}/'
-                            '${_date.year}',
-                            style: GoogleFonts.inter(
-                                color: Colors.white, fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                ...['PF', 'PJ'].map((acc) {
-                  final sel = _account == acc;
-                  return GestureDetector(
-                    onTap: () => setState(() => _account = acc),
-                    child: Container(
-                      margin: EdgeInsets.only(left: acc == 'PJ' ? 6 : 0),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 13),
-                      decoration: BoxDecoration(
-                        color: sel
-                            ? AppColors.accent3.withValues(alpha: 0.22)
-                            : AppColors.glassWhite,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: sel
-                              ? AppColors.accent3
-                              : AppColors.glassBorder,
-                          width: sel ? 1.5 : 1,
-                        ),
-                      ),
-                      child: Text(
-                        acc,
-                        style: GoogleFonts.inter(
-                          color: sel
-                              ? AppColors.accent2
-                              : AppColors.textSecondary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  );
-                }),
+                Expanded(child: _dateSelector(context)),
+                const SizedBox(width: AppSpacing.smd),
+                _accountToggle('PF'),
+                const SizedBox(width: 6),
+                _accountToggle('PJ'),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.lg),
 
-            // Save
-            SizedBox(
-              height: 52,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      _canSave ? AppColors.accent1 : AppColors.glassBorder,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                ),
-                onPressed: _canSave ? _save : null,
-                child: Text(
-                  'Salvar lançamento',
-                  style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700),
-                ),
-              ),
+            AppButton(
+              label: 'Salvar lançamento',
+              onPressed: _canSave ? _save : null,
+              size: AppButtonSize.large,
+              expand: true,
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dateSelector(BuildContext context) => GestureDetector(
+        onTap: () async {
+          final picked = await showDatePicker(
+            context: context,
+            initialDate: _date,
+            firstDate: DateTime(2020),
+            lastDate: DateTime.now(),
+            builder: (context, child) =>
+                Theme(data: ThemeData.dark(), child: child!),
+          );
+          if (picked != null) setState(() => _date = picked);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.smd, vertical: AppSpacing.smd + 1),
+          decoration: BoxDecoration(
+            color: AppColors.glassWhite,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: AppColors.glassBorder),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.calendar_today_rounded,
+                  color: AppColors.textSecondary, size: 16),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                '${_date.day.toString().padLeft(2, '0')}/'
+                '${_date.month.toString().padLeft(2, '0')}/'
+                '${_date.year}',
+                style: AppTypo.body,
+              ),
+            ],
+          ),
+        ),
+      );
+
+  Widget _accountToggle(String acc) {
+    final selected = _account == acc;
+    return GestureDetector(
+      onTap: () => setState(() => _account = acc),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md + 2, vertical: AppSpacing.smd + 1),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.accent3.withValues(alpha: 0.22)
+              : AppColors.glassWhite,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(
+            color: selected ? AppColors.accent3 : AppColors.glassBorder,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Text(
+          acc,
+          style: AppTypo.body.copyWith(
+            color: selected ? AppColors.accent2 : AppColors.textSecondary,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );
@@ -353,11 +287,12 @@ class _TypeBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 13),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.smd + 1),
         decoration: BoxDecoration(
-          color:
-              selected ? color.withValues(alpha: 0.18) : AppColors.glassWhite,
-          borderRadius: BorderRadius.circular(14),
+          color: selected
+              ? color.withValues(alpha: 0.18)
+              : AppColors.glassWhite,
+          borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
             color: selected ? color : AppColors.glassBorder,
             width: selected ? 1.5 : 1,
@@ -367,15 +302,12 @@ class _TypeBtn extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon,
-                color:
-                    selected ? color : AppColors.textSecondary,
-                size: 18),
-            const SizedBox(width: 8),
+                color: selected ? color : AppColors.textSecondary, size: 18),
+            const SizedBox(width: AppSpacing.sm),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: AppTypo.bodyLarge.copyWith(
                 color: selected ? color : AppColors.textSecondary,
-                fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
             ),
