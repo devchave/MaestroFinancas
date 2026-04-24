@@ -38,8 +38,8 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
     final gradient = night
         ? AppColors.backgroundGradientNight
         : AppColors.backgroundGradient;
-    // Orbs vívidos em fundo claro (alpha mais alto que em dark)
-    final orbAlpha = night ? 0.32 : 0.38;
+    // Orbs mais contidos — não queremos ofuscar o fundo médio-claro
+    final orbAlpha = night ? 0.22 : 0.28;
     final screen = MediaQuery.of(context).size;
 
     return AnimatedBuilder(

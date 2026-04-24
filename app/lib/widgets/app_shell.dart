@@ -80,14 +80,20 @@ class _AppShellState extends State<AppShell> {
       key: _scaffoldKey,
       backgroundColor: AppColors.bg1,
       drawer: isDesktop ? null : _MobileDrawer(currentId: widget.currentId),
-      floatingActionButton: widget.floatingActionButton,
-      floatingActionButtonLocation:
-          FloatingActionButtonLocation.endFloat,
       body: AnimatedBackground(
         child: SafeArea(
-          child: isDesktop
-              ? _buildDesktop()
-              : _buildMobile(),
+          child: Stack(
+            children: [
+              isDesktop ? _buildDesktop() : _buildMobile(),
+              // FAB manualmente posicionado acima do dock (~86px de altura)
+              if (widget.floatingActionButton != null)
+                Positioned(
+                  right: AppSpacing.md,
+                  bottom: 96,
+                  child: widget.floatingActionButton!,
+                ),
+            ],
+          ),
         ),
       ),
     );

@@ -9,41 +9,41 @@ import 'package:flutter/material.dart';
 /// **Protocolo Black** (landing) continua com sua paleta própria.
 class AppColors {
   // ─── App: tema CLARO ────────────────────────────────────────────────────────
-  // Backgrounds — branco-azulado levíssimo
-  static const Color bg1 = Color(0xFFF3F6FC);
-  static const Color bg2 = Color(0xFFE8EFF9);
-  static const Color bg3 = Color(0xFFDDE7F3);
+  // Backgrounds — azulado médio-claro (não branco puro — dá contraste p/ texto)
+  static const Color bg1 = Color(0xFFD8E0EE);
+  static const Color bg2 = Color(0xFFC6D2E4);
+  static const Color bg3 = Color(0xFFB4C4DA);
 
   // Accents VÍVIDOS (se destacam no fundo claro)
-  static const Color accent1 = Color(0xFF0EA5E9); // sky blue
-  static const Color accent2 = Color(0xFF06B6D4); // cyan
-  static const Color accent3 = Color(0xFF6366F1); // indigo
-  static const Color accent4 = Color(0xFF14B8A6); // teal
-  static const Color accent5 = Color(0xFF8B5CF6); // violet
+  static const Color accent1 = Color(0xFF0284C7); // sky blue um tom mais escuro
+  static const Color accent2 = Color(0xFF0891B2); // cyan escurecida
+  static const Color accent3 = Color(0xFF4F46E5); // indigo escurecida
+  static const Color accent4 = Color(0xFF0D9488); // teal escurecida
+  static const Color accent5 = Color(0xFF7C3AED); // violet escurecida
 
-  // Glass — branco translúcido sobre fundo claro
-  static const Color glassWhite = Color(0xB3FFFFFF); // ~70% branco
-  static const Color glassBorder = Color(0x1A000000); // ~10% preto (sutil)
+  // Glass — branco translúcido sobre fundo médio-claro
+  static const Color glassWhite = Color(0xCCFFFFFF); // ~80% branco
+  static const Color glassBorder = Color(0x26000000); // ~15% preto (mais visível)
 
-  // Texto — escuro para leitura sobre claro
+  // Texto — escuro forte para leitura sobre claro
   static const Color textPrimary = Color(0xFF0B1930);   // slate-900
-  static const Color textSecondary = Color(0xFF526279); // slate-600
-  static const Color textMuted = Color(0xFF8896A8);     // slate-500
+  static const Color textSecondary = Color(0xFF334155); // slate-700 (mais escuro)
+  static const Color textMuted = Color(0xFF64748B);     // slate-500
 
   // Semântico (universal)
-  static const Color positive = Color(0xFF059669); // verde um toque mais escuro (contraste)
-  static const Color negative = Color(0xFFDC2626); // vermelho um toque mais escuro
+  static const Color positive = Color(0xFF047857); // verde escurecido p/ contraste
+  static const Color negative = Color(0xFFB91C1C); // vermelho escurecido p/ contraste
 
   // Gradientes
   static const List<Color> backgroundGradient = [bg1, bg2, bg3];
   static const List<Color> accentGradient = [accent1, accent2, accent3];
   static const List<Color> waterGradient = [accent4, accent2, accent1];
 
-  // Noite: sutil diminuição do brilho do fundo (não vira dark mode full)
+  // Noite: sutil diminuição do brilho
   static const List<Color> backgroundGradientNight = [
-    Color(0xFFDEE5F2),
-    Color(0xFFD0DAED),
-    Color(0xFFC2CFE5),
+    Color(0xFFB8C3D6),
+    Color(0xFFA5B2C9),
+    Color(0xFF94A3BC),
   ];
 
   // ─── Protocolo Black (landing / mentoria) ───────────────────────────────────
