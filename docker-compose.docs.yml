@@ -1,0 +1,16 @@
+services:
+  docs:
+    image: ghcr.io/devchave/maestrofinan-as-docs:${DOCS_TAG:-latest}
+    container_name: maestro_docs
+    restart: unless-stopped
+    # Expõe apenas para o nginx da VPS (não para a internet diretamente)
+    ports:
+      - "127.0.0.1:8001:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      maestro.service: docs
+      maestro.version: "${DOCS_TAG:-latest}"

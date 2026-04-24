@@ -1,0 +1,71 @@
+site_name: MaestroFinanças — Arquitetura
+site_description: Documentação técnica do ecossistema financeiro MaestroFinanças
+site_author: devchave
+docs_dir: docs
+
+theme:
+  name: material
+  language: pt-BR
+  palette:
+    - scheme: slate          # dark (alinhado com o glassmorphism da UI)
+      primary: blue
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Modo claro
+    - scheme: default
+      primary: blue
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Modo escuro
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search:
+      lang: pt
+
+markdown_extensions:
+  - admonition
+  - tables
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Home: index.md
+  - Arquitetura:
+    - "00 · Visão Geral":         architecture/00-overview.md
+    - "01 · Stack Tecnológica":   architecture/01-tech-stack.md
+    - "02 · Desenho do Sistema":  architecture/02-system-design.md
+    - "03 · Engine de Inteligência": architecture/03-intelligence-engine.md
+    - "04 · Segurança & LGPD":    architecture/04-security.md
+    - "05 · Escalabilidade":      architecture/05-scalability-infra.md
+    - "06 · Modelo de Dados":     architecture/06-data-model.md
+    - "07 · RBAC Granular":       architecture/07-rbac.md
+    - "08 · CI/CD & Deploy":      architecture/08-cicd-deploy.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/devchave/maestrofinan-as

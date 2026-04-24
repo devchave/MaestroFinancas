@@ -1,0 +1,93 @@
+name: Docs — Build & Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'Dockerfile.docs'
+      - 'deploy/vps/nginx-docs.conf'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}-docs
+
+jobs:
+  # ── 1. Build e push da imagem de docs ───────────────────────────────────────
+  build-docs:
+    name: Build docs image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    outputs:
+      short-sha: ${{ steps.vars.outputs.short-sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Variáveis
+        id: vars
+        run: echo "short-sha=$(echo ${{ github.sha }} | cut -c1-7)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest
+
+      - name: Build & push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.docs
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── 2. Disparar deploy na VPS ────────────────────────────────────────────────
+  deploy-docs:
+    name: Deploy docs → VPS
+    runs-on: ubuntu-latest
+    needs: build-docs
+    environment: staging
+    steps:
+      - name: Chamar webhook da VPS
+        env:
+          IMAGE: >-
+            ghcr.io/${{ github.repository }}-docs:sha-${{ needs.build-docs.outputs.short-sha }}
+          SECRET: ${{ secrets.STAGING_WEBHOOK_SECRET }}
+          URL: ${{ secrets.STAGING_RECEIVER_URL }}
+        run: |
+          PAYLOAD=$(jq -cn \
+            --arg sha "${{ github.sha }}" \
+            --arg image "$IMAGE" \
+            --arg env  "docs" \
+            '{sha:$sha, image:$image, env:$env}')
+
+          SIG="sha256=$(printf '%s' "$PAYLOAD" | \
+            openssl dgst -sha256 -hmac "$SECRET" -hex | awk '{print $2}')"
+
+          HTTP=$(curl -sf -o /dev/null -w "%{http_code}" \
+            -X POST "$URL/deploy" \
+            -H "Content-Type: application/json" \
+            -H "X-Hub-Signature-256: $SIG" \
+            -d "$PAYLOAD" --max-time 15)
+
+          [ "$HTTP" = "202" ] || { echo "❌ Webhook falhou: HTTP $HTTP"; exit 1; }
+          echo "✅ Deploy de docs aceito"

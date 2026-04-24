@@ -1,0 +1,25 @@
+# ── Estágio 1: build do site estático ────────────────────────────────────────
+FROM squidfunk/mkdocs-material:9.5 AS builder
+
+WORKDIR /app
+
+# Dependências Python extras (apenas pymdownx já vem na imagem base)
+COPY requirements-docs.txt* ./
+RUN if [ -f requirements-docs.txt ]; then pip install -r requirements-docs.txt; fi
+
+COPY mkdocs.yml        ./
+COPY docs/             ./docs/
+
+RUN mkdocs build --strict
+
+# ── Estágio 2: servir com nginx alpine (imagem mínima, ~7MB) ─────────────────
+FROM nginx:1.25-alpine
+
+COPY --from=builder /app/site /usr/share/nginx/html
+COPY deploy/vps/nginx-docs.conf /etc/nginx/conf.d/default.conf
+
+# Health check interno
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget -qO- http://localhost/health || exit 1
+
+EXPOSE 80
