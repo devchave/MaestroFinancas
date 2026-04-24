@@ -173,14 +173,21 @@ class _QuickDock extends StatelessWidget {
         radius: AppRadius.xxl,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: dockTools
-              .map((tool) => _DockItem(
-                    icon: tool.icon,
-                    label: tool.name,
-                    color: tool.color,
-                    onTap: () => context.go(tool.route),
-                  ))
-              .toList(),
+          children: [
+            // Atalho p/ tela inicial (antes ficava na sidebar)
+            _DockItem(
+              icon: Icons.apps_rounded,
+              label: 'Início',
+              color: AppColors.accent3,
+              onTap: () => context.go('/app'),
+            ),
+            ...dockTools.map((tool) => _DockItem(
+                  icon: tool.icon,
+                  label: tool.name,
+                  color: tool.color,
+                  onTap: () => context.go(tool.route),
+                )),
+          ],
         ),
       ),
     );
@@ -314,7 +321,9 @@ class _DesktopSidebar extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.xs + 2, vertical: 2),
-              children: appTools.map((tool) {
+              children: appTools
+                  .where((t) => t.id != 'settings')
+                  .map((tool) {
                 return _SidebarItem(
                   tool: tool,
                   active: tool.id == currentId,
@@ -326,10 +335,10 @@ class _DesktopSidebar extends StatelessWidget {
           ),
 
           const AppDivider(),
-          _HomeItem(
+          _SettingsItem(
             expanded: expanded,
-            active: currentId == 'home',
-            onTap: () => context.go('/app'),
+            active: currentId == 'settings',
+            onTap: () => context.go('/app/settings'),
           ),
           if (expanded)
             const Padding(
@@ -354,7 +363,9 @@ class _MobileDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: Colors.white.withValues(alpha: 0.55),
+      // Opacidade alta para leitura clara (sem conflito com a tela atrás)
+      backgroundColor: const Color(0xFFF0F4FA),
+      elevation: 8,
       child: SafeArea(
         child: Column(
           children: [
@@ -382,7 +393,9 @@ class _MobileDrawer extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.sm, vertical: 2),
-                children: appTools.map((tool) {
+                children: appTools
+                    .where((t) => t.id != 'settings')
+                    .map((tool) {
                   return _SidebarItem(
                     tool: tool,
                     active: tool.id == currentId,
@@ -397,12 +410,12 @@ class _MobileDrawer extends StatelessWidget {
             ),
 
             const AppDivider(),
-            _HomeItem(
+            _SettingsItem(
               expanded: true,
-              active: currentId == 'home',
+              active: currentId == 'settings',
               onTap: () {
                 Navigator.pop(context);
-                context.go('/app');
+                context.go('/app/settings');
               },
             ),
             const Padding(
@@ -487,15 +500,15 @@ class _SidebarItem extends StatelessWidget {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// "Todos os apps" item (sidebar footer)
+// Configurações (sidebar footer)
 // ════════════════════════════════════════════════════════════════════════════
 
-class _HomeItem extends StatelessWidget {
+class _SettingsItem extends StatelessWidget {
   final bool expanded;
   final bool active;
   final VoidCallback onTap;
 
-  const _HomeItem({
+  const _SettingsItem({
     required this.expanded,
     required this.active,
     required this.onTap,
@@ -503,7 +516,7 @@ class _HomeItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? AppColors.accent1 : AppColors.accent1;
+    const color = AppColors.textSecondary;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -514,12 +527,12 @@ class _HomeItem extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: active
-              ? AppColors.accent1.withValues(alpha: 0.15)
+              ? AppColors.textSecondary.withValues(alpha: 0.12)
               : Colors.white.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(AppRadius.sm),
           border: Border.all(
             color: active
-                ? AppColors.accent1.withValues(alpha: 0.35)
+                ? AppColors.textSecondary.withValues(alpha: 0.3)
                 : AppColors.glassBorder,
           ),
         ),
@@ -528,12 +541,12 @@ class _HomeItem extends StatelessWidget {
               ? MainAxisAlignment.start
               : MainAxisAlignment.center,
           children: [
-            Icon(Icons.apps_rounded, color: color, size: 20),
+            Icon(Icons.settings_rounded, color: color, size: 20),
             if (expanded) ...[
               const SizedBox(width: AppSpacing.smd),
               Expanded(
                 child: Text(
-                  'Todos os apps',
+                  'Configurações',
                   style: AppTypo.bodySmall.copyWith(
                     color: color,
                     fontWeight: FontWeight.w600,
