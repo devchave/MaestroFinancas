@@ -27,17 +27,38 @@ class AddTransactionSheet extends StatefulWidget {
 class _AddTransactionSheetState extends State<AddTransactionSheet> {
   TxType _type = TxType.expense;
   TxCategory? _category;
+  String? _accountId;
+  String? _cardId; // null = pago direto pela conta
   final _amountCtrl = TextEditingController();
   final _titleCtrl = TextEditingController();
   DateTime _date = DateTime.now();
-  String _account = 'PF';
+
+  final _accountStore = AccountStore.instance;
+  final _cardStore = CardStore.instance;
 
   List<TxCategory> get _cats =>
       _type == TxType.income ? incomeCategories : expenseCategories;
 
+  List<Account> get _accounts => _accountStore.all;
+
+  /// Cartões disponíveis para a conta selecionada.
+  List<PaymentCard> get _availableCards {
+    if (_accountId == null) return [];
+    return _cardStore.forAccount(_accountId!);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (_accounts.isNotEmpty) {
+      _accountId = _accounts.first.id;
+    }
+  }
+
   bool get _canSave =>
       _titleCtrl.text.trim().isNotEmpty &&
       _category != null &&
+      _accountId != null &&
       (double.tryParse(_amountCtrl.text.replaceAll(',', '.')) ?? 0) > 0;
 
   @override
@@ -47,21 +68,9 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
     super.dispose();
   }
 
-  /// Mapeamento provisório do toggle PF/PJ para um accountId real.
-  /// Na Etapa 6 será substituído por seletor completo de Conta + Cartão.
-  String _resolveAccountId() {
-    final accounts = AccountStore.instance.all;
-    if (_account == 'PF') {
-      final pf = accounts.where((a) => a.isPF).toList();
-      return pf.isNotEmpty ? pf.first.id : accounts.first.id;
-    }
-    final pj = accounts.where((a) => !a.isPF).toList();
-    return pj.isNotEmpty ? pj.first.id : accounts.first.id;
-  }
-
   void _save() {
     final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '.'));
-    if (amount == null || amount <= 0) return;
+    if (amount == null || amount <= 0 || _accountId == null) return;
     widget.store.add(Transaction(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       title: _titleCtrl.text.trim(),
@@ -69,7 +78,8 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
       type: _type,
       category: _category!,
       date: _date,
-      accountId: _resolveAccountId(),
+      accountId: _accountId!,
+      cardId: _type == TxType.expense ? _cardId : null,
     ));
     Navigator.pop(context);
   }
@@ -80,11 +90,10 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
     return Container(
       margin: const EdgeInsets.only(top: 60),
       padding: EdgeInsets.only(bottom: bottom),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0D1B2A),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF0F4FA),
         borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
-        border: const Border(top: BorderSide(color: AppColors.glassBorder)),
+            BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
@@ -95,18 +104,16 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Handle
             Center(
               child: Container(
-                width: 36,
-                height: 4,
+                width: 36, height: 4,
                 decoration: BoxDecoration(
                   color: AppColors.glassBorder,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const SizedBox(height: AppSpacing.md + 2),
+            const SizedBox(height: AppSpacing.md),
 
             // Type toggle
             Row(
@@ -133,6 +140,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                     onTap: () => setState(() {
                       _type = TxType.income;
                       _category = null;
+                      _cardId = null; // receita não vai em cartão
                     }),
                   ),
                 ),
@@ -151,7 +159,8 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
               decoration: InputDecoration(
                 hintText: '0,00',
                 hintStyle: AppTypo.display.copyWith(
-                    fontSize: 36, color: AppColors.glassBorder),
+                    fontSize: 36,
+                    color: AppColors.textMuted.withValues(alpha: 0.4)),
                 prefixText: 'R\$ ',
                 prefixStyle: AppTypo.title
                     .copyWith(color: AppColors.textSecondary),
@@ -173,9 +182,64 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
             ),
             const SizedBox(height: AppSpacing.md),
 
+            // Account selector
+            Text('Conta', style: AppTypo.label),
+            const SizedBox(height: AppSpacing.sm),
+            if (_accounts.isEmpty)
+              Text(
+                'Nenhuma conta cadastrada. Vá em Contas primeiro.',
+                style: AppTypo.bodySmall.copyWith(
+                    color: AppColors.negative),
+              )
+            else
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: _accounts.map((a) {
+                  return StatusChip(
+                    label: a.name,
+                    color: a.color,
+                    icon: a.type.icon,
+                    selected: _accountId == a.id,
+                    onTap: () => setState(() {
+                      _accountId = a.id;
+                      _cardId = null; // reset ao trocar de conta
+                    }),
+                  );
+                }).toList(),
+              ),
+            const SizedBox(height: AppSpacing.md),
+
+            // Card selector (só em despesas)
+            if (_type == TxType.expense && _availableCards.isNotEmpty) ...[
+              Text('Cartão (opcional)', style: AppTypo.label),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  StatusChip(
+                    label: 'Sem cartão',
+                    color: AppColors.textMuted,
+                    icon: Icons.payments_rounded,
+                    selected: _cardId == null,
+                    onTap: () => setState(() => _cardId = null),
+                  ),
+                  ..._availableCards.map((c) => StatusChip(
+                        label: c.name,
+                        color: AppColors.accent1,
+                        icon: c.type.icon,
+                        selected: _cardId == c.id,
+                        onTap: () => setState(() => _cardId = c.id),
+                      )),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+
             // Category
             Text('Categoria', style: AppTypo.label),
-            const SizedBox(height: AppSpacing.smd - 2),
+            const SizedBox(height: AppSpacing.sm),
             Wrap(
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.sm,
@@ -191,15 +255,43 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
             ),
             const SizedBox(height: AppSpacing.md),
 
-            // Date + Account
-            Row(
-              children: [
-                Expanded(child: _dateSelector(context)),
-                const SizedBox(width: AppSpacing.smd),
-                _accountToggle('PF'),
-                const SizedBox(width: 6),
-                _accountToggle('PJ'),
-              ],
+            // Date picker
+            GestureDetector(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _date,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime.now(),
+                );
+                if (picked != null) setState(() => _date = picked);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.smd,
+                    vertical: AppSpacing.smd + 1),
+                decoration: BoxDecoration(
+                  color: AppColors.glassWhite,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(color: AppColors.glassBorder),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today_rounded,
+                        color: AppColors.textSecondary, size: 16),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      '${_date.day.toString().padLeft(2, '0')}/'
+                      '${_date.month.toString().padLeft(2, '0')}/'
+                      '${_date.year}',
+                      style: AppTypo.body,
+                    ),
+                    const Spacer(),
+                    const Icon(Icons.arrow_drop_down_rounded,
+                        color: AppColors.textSecondary),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: AppSpacing.lg),
 
@@ -210,70 +302,6 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
               expand: true,
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _dateSelector(BuildContext context) => GestureDetector(
-        onTap: () async {
-          final picked = await showDatePicker(
-            context: context,
-            initialDate: _date,
-            firstDate: DateTime(2020),
-            lastDate: DateTime.now(),
-            builder: (context, child) =>
-                Theme(data: ThemeData.dark(), child: child!),
-          );
-          if (picked != null) setState(() => _date = picked);
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.smd, vertical: AppSpacing.smd + 1),
-          decoration: BoxDecoration(
-            color: AppColors.glassWhite,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(color: AppColors.glassBorder),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.calendar_today_rounded,
-                  color: AppColors.textSecondary, size: 16),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
-                '${_date.day.toString().padLeft(2, '0')}/'
-                '${_date.month.toString().padLeft(2, '0')}/'
-                '${_date.year}',
-                style: AppTypo.body,
-              ),
-            ],
-          ),
-        ),
-      );
-
-  Widget _accountToggle(String acc) {
-    final selected = _account == acc;
-    return GestureDetector(
-      onTap: () => setState(() => _account = acc),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md + 2, vertical: AppSpacing.smd + 1),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColors.accent3.withValues(alpha: 0.22)
-              : AppColors.glassWhite,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(
-            color: selected ? AppColors.accent3 : AppColors.glassBorder,
-            width: selected ? 1.5 : 1,
-          ),
-        ),
-        child: Text(
-          acc,
-          style: AppTypo.body.copyWith(
-            color: selected ? AppColors.accent2 : AppColors.textSecondary,
-            fontWeight: FontWeight.w700,
-          ),
         ),
       ),
     );
