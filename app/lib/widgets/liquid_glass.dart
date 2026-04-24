@@ -1,49 +1,32 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-/// Primitivo "Liquid Glass" — inspirado no design Clear/Colorful
-/// do iOS/macOS 26.
+/// Primitivo "Liquid Glass" — estilo Clear/Colorful do iOS/macOS 26.
 ///
-/// Empilha 5 camadas para compor o efeito:
-///   1. BackdropFilter         — borra o que está atrás
-///   2. Color bleed            — tinta ambiente que "sangra" pelo vidro
-///   3. Inner highlight        — brilho suave no topo (luz refletindo)
+/// Afinado para **tema claro**: borda mais sutil, rim menos brilhante,
+/// highlight mais suave, cor de tint visível sem dominar.
+///
+/// Camadas:
+///   1. BackdropFilter         — borra o fundo claro
+///   2. Color bleed (opcional) — tinta ambiente
+///   3. Highlight interno      — brilho difuso do topo
 ///   4. Conteúdo (child)
-///   5. Rim (borda branca translúcida + linha especular no topo)
-///
-/// Uso:
-///   LiquidGlass(
-///     tint: Colors.cyan,
-///     radius: 22,
-///     padding: EdgeInsets.all(16),
-///     child: Text('Olá'),
-///   );
+///   5. Rim especular no topo  — fina linha clara
+///   6. Borda translúcida      — contorno sutil
 class LiquidGlass extends StatelessWidget {
   final Widget child;
 
-  /// Cor que "vaza" por baixo do vidro (ambient tint).
-  /// Null = vidro neutro.
+  /// Cor que "vaza" pelo vidro. Null = vidro clear (neutro branco).
   final Color? tint;
 
-  /// Intensidade do tint (0.0-1.0). Default 1.0 = cor vívida.
+  /// Intensidade do tint.
   final double tintStrength;
 
-  /// Raio de canto.
   final double radius;
-
-  /// Padding interno.
   final EdgeInsetsGeometry? padding;
-
-  /// Blur do fundo — maior = mais vidro fosco.
   final double blur;
-
-  /// Mostra rim no topo (linha de luz fina).
   final bool showRim;
-
-  /// Mostra highlight interno (brilho difuso).
   final bool showHighlight;
-
-  /// Força da borda translúcida (0 = sem borda).
   final double borderStrength;
 
   const LiquidGlass({
@@ -69,7 +52,7 @@ class LiquidGlass extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
         child: Stack(
           children: [
-            // ── 1. Camada base: tint de cor (ambient bleed) ──────────────
+            // ── 1. Base: ou tint, ou vidro clear branco ────────────────
             if (tint != null)
               Positioned.fill(
                 child: IgnorePointer(
@@ -79,9 +62,9 @@ class LiquidGlass extends StatelessWidget {
                         center: const Alignment(0, -0.35),
                         radius: 1.3,
                         colors: [
-                          tint!.withValues(alpha: 0.45 * tintStrength),
-                          tint!.withValues(alpha: 0.18 * tintStrength),
-                          tint!.withValues(alpha: 0.05 * tintStrength),
+                          tint!.withValues(alpha: 0.55 * tintStrength),
+                          tint!.withValues(alpha: 0.25 * tintStrength),
+                          tint!.withValues(alpha: 0.08 * tintStrength),
                         ],
                         stops: const [0, 0.6, 1],
                       ),
@@ -90,18 +73,18 @@ class LiquidGlass extends StatelessWidget {
                 ),
               )
             else
-              // Sem tint: leve véu branco translúcido
+              // Vidro clear: branco translúcido
               Positioned.fill(
                 child: IgnorePointer(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: Colors.white.withValues(alpha: 0.5),
                     ),
                   ),
                 ),
               ),
 
-            // ── 2. Highlight interno difuso (luz ambiente de cima) ────────
+            // ── 2. Highlight interno (luz de cima, sutil no claro) ────
             if (showHighlight)
               Positioned.fill(
                 child: IgnorePointer(
@@ -111,8 +94,8 @@ class LiquidGlass extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.white.withValues(alpha: 0.22),
-                          Colors.white.withValues(alpha: 0.04),
+                          Colors.white.withValues(alpha: 0.45),
+                          Colors.white.withValues(alpha: 0.15),
                           Colors.transparent,
                         ],
                         stops: const [0, 0.4, 1],
@@ -122,13 +105,13 @@ class LiquidGlass extends StatelessWidget {
                 ),
               ),
 
-            // ── 3. Conteúdo ────────────────────────────────────────────────
+            // ── 3. Conteúdo ────────────────────────────────────────────
             Padding(
               padding: padding ?? EdgeInsets.zero,
               child: child,
             ),
 
-            // ── 4. Rim — linha especular fina no topo ────────────────────
+            // ── 4. Rim especular — linha clara no topo ────────────────
             if (showRim)
               Positioned(
                 top: 0,
@@ -141,7 +124,7 @@ class LiquidGlass extends StatelessWidget {
                       gradient: LinearGradient(
                         colors: [
                           Colors.white.withValues(alpha: 0.0),
-                          Colors.white.withValues(alpha: 0.7),
+                          Colors.white.withValues(alpha: 0.85),
                           Colors.white.withValues(alpha: 0.0),
                         ],
                         stops: const [0, 0.5, 1],
@@ -151,7 +134,7 @@ class LiquidGlass extends StatelessWidget {
                 ),
               ),
 
-            // ── 5. Borda translúcida (acabamento de vidro) ───────────────
+            // ── 5. Borda translúcida (contorno sutil) ─────────────────
             if (borderStrength > 0)
               Positioned.fill(
                 child: IgnorePointer(
@@ -160,7 +143,7 @@ class LiquidGlass extends StatelessWidget {
                       borderRadius: br,
                       border: Border.all(
                         color: Colors.white
-                            .withValues(alpha: 0.22 * borderStrength),
+                            .withValues(alpha: 0.7 * borderStrength),
                         width: 1,
                       ),
                     ),
@@ -174,8 +157,6 @@ class LiquidGlass extends StatelessWidget {
   }
 }
 
-/// Variação com um padrão "shimmer" diagonal — passa uma faixa de luz
-/// sutil que reforça a sensação líquida em elementos maiores.
 class LiquidShimmer extends StatelessWidget {
   final double intensity;
   const LiquidShimmer({super.key, this.intensity = 0.08});

@@ -71,34 +71,80 @@ class AppButton extends StatelessWidget {
 
     switch (variant) {
       case AppButtonVariant.primary:
+        // Fundo sólido com gradiente vívido + rim/highlight (glass polish)
         return Opacity(
           opacity: disabled ? 0.5 : 1,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              boxShadow: disabled
-                  ? null
-                  : [
-                      BoxShadow(
-                        color: AppColors.accent1.withValues(alpha: 0.35),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-            ),
-            child: LiquidGlass(
-              tint: AppColors.accent1,
-              tintStrength: 1.4,
-              radius: AppRadius.md,
-              blur: 16,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: disabled ? null : onPressed,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  child:
-                      Padding(padding: padding, child: Center(child: inner)),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.accent1, AppColors.accent3],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                boxShadow: disabled
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: AppColors.accent1.withValues(alpha: 0.35),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+              ),
+              child: Stack(
+                children: [
+                  // Highlight interno (topo->transparente)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.25),
+                              Colors.white.withValues(alpha: 0.05),
+                              Colors.transparent,
+                            ],
+                            stops: const [0, 0.45, 1],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Rim no topo
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: IgnorePointer(
+                      child: Container(
+                        height: 1,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.white.withValues(alpha: 0),
+                              Colors.white.withValues(alpha: 0.85),
+                              Colors.white.withValues(alpha: 0),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: disabled ? null : onPressed,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      child: Padding(
+                          padding: padding, child: Center(child: inner)),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -227,38 +273,36 @@ class AppIconBadge extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Glow externo colorido (halo)
+          // Glow colorido externo sutil (halo)
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(radius),
               boxShadow: [
                 BoxShadow(
-                  color: color.withValues(alpha: 0.28),
-                  blurRadius: size * 0.45,
-                  spreadRadius: -size * 0.15,
+                  color: color.withValues(alpha: 0.22),
+                  blurRadius: size * 0.4,
+                  spreadRadius: -size * 0.1,
                   offset: Offset(0, size * 0.08),
                 ),
               ],
             ),
           ),
-          // Liquid glass + ícone
+          // Clear Colorful: vidro CLEAR (sem tint) + ícone colorido dentro
           LiquidGlass(
-            tint: color,
-            tintStrength: 1.1,
             radius: radius,
-            blur: 18,
+            blur: 14,
             child: SizedBox(
               width: size,
               height: size,
               child: Center(
                 child: Icon(
                   icon,
-                  color: Colors.white,
-                  size: iconSize ?? size * 0.5,
+                  color: color,
+                  size: iconSize ?? size * 0.52,
                   shadows: [
                     Shadow(
-                      color: color.withValues(alpha: 0.6),
-                      blurRadius: 8,
+                      color: color.withValues(alpha: 0.35),
+                      blurRadius: 10,
                     ),
                   ],
                 ),

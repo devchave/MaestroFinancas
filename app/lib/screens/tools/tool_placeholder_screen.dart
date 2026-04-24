@@ -23,8 +23,7 @@ class ToolPlaceholderScreen extends StatelessWidget {
       return Scaffold(
         backgroundColor: AppColors.bg1,
         body: Center(
-          child: Text('Ferramenta não encontrada',
-              style: AppTypo.body.copyWith(color: Colors.white)),
+          child: Text('Ferramenta não encontrada', style: AppTypo.body),
         ),
       );
     }

@@ -401,7 +401,6 @@ class _CategoriesCard extends StatelessWidget {
                     Expanded(
                       child: Text(e.key.label,
                           style: AppTypo.bodySmall.copyWith(
-                              color: Colors.white,
                               fontWeight: FontWeight.w500)),
                     ),
                     Text('${(pct * 100).toStringAsFixed(1)}%',
@@ -462,10 +461,16 @@ class TxRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.smd + 2, vertical: AppSpacing.smd),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: Colors.white.withValues(alpha: 0.65),
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(
-              color: AppColors.glassBorder.withValues(alpha: 0.5)),
+          border: Border.all(color: AppColors.glassBorder),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [

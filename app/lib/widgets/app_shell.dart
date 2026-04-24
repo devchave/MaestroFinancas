@@ -167,18 +167,14 @@ class _QuickDock extends StatelessWidget {
         radius: AppRadius.xxl,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _DockItem(icon: Icons.apps_rounded,
-                label: 'Apps',
-                color: AppColors.accent3,
-                onTap: () => context.go('/app')),
-            ...dockTools.map((tool) => _DockItem(
-                  icon: tool.icon,
-                  label: tool.name,
-                  color: tool.color,
-                  onTap: () => context.go(tool.route),
-                )),
-          ],
+          children: dockTools
+              .map((tool) => _DockItem(
+                    icon: tool.icon,
+                    label: tool.name,
+                    color: tool.color,
+                    onTap: () => context.go(tool.route),
+                  ))
+              .toList(),
         ),
       ),
     );
@@ -279,7 +275,7 @@ class _DesktopSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF060A14),
+      color: Colors.white.withValues(alpha: 0.55),
       child: Column(
         children: [
           InkWell(
@@ -352,7 +348,7 @@ class _MobileDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: const Color(0xFF060A14),
+      backgroundColor: Colors.white.withValues(alpha: 0.55),
       child: SafeArea(
         child: Column(
           children: [
@@ -467,7 +463,7 @@ class _SidebarItem extends StatelessWidget {
                   tool.name,
                   style: AppTypo.bodySmall.copyWith(
                     color: active
-                        ? Colors.white
+                        ? AppColors.textPrimary
                         : AppColors.textSecondary,
                     fontWeight: active
                         ? FontWeight.w600

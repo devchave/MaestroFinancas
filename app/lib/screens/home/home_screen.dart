@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/app_tool.dart';
+import '../../models/transaction.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
@@ -19,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentPage = 0;
   final _pageController = PageController();
+  final _store = TransactionStore.instance;
 
   List<List<AppTool>> get _pages {
     final list = appTools.toList();
@@ -39,86 +41,113 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return AppShell(
       currentId: 'home',
-      content: Column(
-        children: [
-          const SizedBox(height: AppSpacing.smd),
-          _GreetingBar().animate().fadeIn(delay: 200.ms),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.screen,
-                AppSpacing.md, AppSpacing.screen, 0),
-            child: _BalanceCard()
-                .animate()
-                .fadeIn(delay: 300.ms)
-                .slideY(begin: 0.2, end: 0),
-          ),
-          const SizedBox(height: AppSpacing.lg),
+      content: ListenableBuilder(
+        listenable: _store,
+        builder: (context, _) {
+          final now = DateTime.now();
+          final income = _store.incomeForMonth(now.year, now.month);
+          final expense = _store.expenseForMonth(now.year, now.month);
+          final savings = income - expense;
+          final cats = _store.expensesByCategory(now.year, now.month);
+          final topCat = cats.entries.isNotEmpty ? cats.entries.first : null;
 
-          // Grid paginado
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: (i) => setState(() => _currentPage = i),
-              itemCount: _pages.length,
-              itemBuilder: (context, pageIndex) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.screen),
-                  child: GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      crossAxisSpacing: AppSpacing.md,
-                      mainAxisSpacing: AppSpacing.lg,
-                      childAspectRatio: 0.75,
-                    ),
-                    itemCount: _pages[pageIndex].length,
-                    itemBuilder: (context, i) {
-                      final tool = _pages[pageIndex][i];
-                      return _AppIcon(tool: tool)
-                          .animate()
-                          .fadeIn(
-                              delay: Duration(
-                                  milliseconds: 100 + i * 60))
-                          .scale(
-                            begin: const Offset(0.8, 0.8),
-                            delay:
-                                Duration(milliseconds: 100 + i * 60),
-                            duration: 300.ms,
-                            curve: Curves.easeOutBack,
-                          );
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
+          return Column(
+            children: [
+              const SizedBox(height: AppSpacing.smd),
+              _GreetingBar().animate().fadeIn(delay: 200.ms),
 
-          // Indicador de página
-          if (_pages.length > 1)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  _pages.length,
-                  (i) => AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    width: _currentPage == i ? 20 : 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: _currentPage == i
-                          ? AppColors.accent1
-                          : AppColors.glassBorder,
-                      borderRadius:
-                          BorderRadius.circular(AppRadius.xs),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.screen,
+                    AppSpacing.md, AppSpacing.screen, 0),
+                child: _BalanceCard(savings: savings)
+                    .animate()
+                    .fadeIn(delay: 300.ms)
+                    .slideY(begin: 0.2, end: 0),
+              ),
+              const SizedBox(height: AppSpacing.smd),
+
+              // Métricas do mês
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.screen),
+                child: _MonthStatsRow(
+                  income: income,
+                  expense: expense,
+                  savings: savings,
+                  topCat: topCat,
+                ).animate().fadeIn(delay: 400.ms),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Grid de apps
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: (i) => setState(() => _currentPage = i),
+                  itemCount: _pages.length,
+                  itemBuilder: (context, pageIndex) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.screen),
+                      child: GridView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          crossAxisSpacing: AppSpacing.md,
+                          mainAxisSpacing: AppSpacing.md,
+                          childAspectRatio: 0.78,
+                        ),
+                        itemCount: _pages[pageIndex].length,
+                        itemBuilder: (context, i) {
+                          final tool = _pages[pageIndex][i];
+                          return _AppIcon(tool: tool)
+                              .animate()
+                              .fadeIn(
+                                  delay: Duration(
+                                      milliseconds: 100 + i * 60))
+                              .scale(
+                                begin: const Offset(0.8, 0.8),
+                                delay:
+                                    Duration(milliseconds: 100 + i * 60),
+                                duration: 300.ms,
+                                curve: Curves.easeOutBack,
+                              );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // Indicador de página
+              if (_pages.length > 1)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      _pages.length,
+                      (i) => AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin:
+                            const EdgeInsets.symmetric(horizontal: 3),
+                        width: _currentPage == i ? 20 : 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: _currentPage == i
+                              ? AppColors.accent1
+                              : AppColors.glassBorder,
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.xs),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -145,13 +174,12 @@ class _GreetingBar extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text('Olá, devchave',
-                        style: AppTypo.bodySmall),
+                    Text('Olá, devchave', style: AppTypo.bodySmall),
                     const SizedBox(width: 6),
                     Icon(
                       AppColors.isNight
                           ? Icons.nights_stay_rounded
-                          : Icons.waving_hand_rounded,
+                          : Icons.wb_sunny_rounded,
                       color: AppColors.isNight
                           ? AppColors.accent3
                           : const Color(0xFFF59E0B),
@@ -169,8 +197,7 @@ class _GreetingBar extends StatelessWidget {
             radius: AppRadius.pill,
             child: CircleAvatar(
               radius: 20,
-              backgroundColor:
-                  AppColors.accent3.withValues(alpha: 0.4),
+              backgroundColor: AppColors.accent3,
               child: Text('D',
                   style: AppTypo.titleSmall
                       .copyWith(color: Colors.white)),
@@ -182,28 +209,56 @@ class _GreetingBar extends StatelessWidget {
   }
 }
 
-// ─── Balance card ─────────────────────────────────────────────────────────────
+// ─── Balance card (patrimônio total + PF/PJ) ─────────────────────────────────
 
 class _BalanceCard extends StatelessWidget {
+  final double savings;
+  const _BalanceCard({required this.savings});
+
   @override
   Widget build(BuildContext context) {
+    // Mock: patrimônio cresce/descresce conforme savings do mês
+    const patrimonio = 48320.0;
+    const pf = 22100.0;
+    const pj = 26220.0;
+    final positive = savings >= 0;
+
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
       radius: AppRadius.xl,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Patrimônio total', style: AppTypo.bodySmall),
-                const SizedBox(height: 4),
-                Text('R\$ 48.320,00', style: AppTypo.numberLarge),
-                const SizedBox(height: 6),
-                StatusChip(
-                  label: '+2,4% hoje',
-                  color: AppColors.positive,
-                  icon: Icons.trending_up_rounded,
+                const SizedBox(height: 2),
+                Text(fmtBRL(patrimonio), style: AppTypo.numberLarge),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      positive
+                          ? Icons.arrow_upward_rounded
+                          : Icons.arrow_downward_rounded,
+                      color: positive
+                          ? AppColors.positive
+                          : AppColors.negative,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      '${positive ? '+' : ''}${fmtBRL(savings)} este mês',
+                      style: AppTypo.bodySmall.copyWith(
+                        color: positive
+                            ? AppColors.positive
+                            : AppColors.negative,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -211,9 +266,9 @@ class _BalanceCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _MiniStat('PF', 'R\$ 22.100', AppColors.accent1),
-              const SizedBox(height: 8),
-              _MiniStat('PJ', 'R\$ 26.220', AppColors.accent3),
+              _AccountTile('PF', pf, AppColors.accent1),
+              const SizedBox(height: 6),
+              _AccountTile('PJ', pj, AppColors.accent3),
             ],
           ),
         ],
@@ -222,35 +277,165 @@ class _BalanceCard extends StatelessWidget {
   }
 }
 
-class _MiniStat extends StatelessWidget {
+class _AccountTile extends StatelessWidget {
   final String label;
-  final String value;
+  final double value;
   final Color color;
-  const _MiniStat(this.label, this.value, this.color);
+  const _AccountTile(this.label, this.value, this.color);
 
   @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm, vertical: 2),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-            child: Text(label,
-                style: AppTypo.labelSmall.copyWith(color: color)),
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm, vertical: 2),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
           ),
-          const SizedBox(height: 2),
-          Text(value,
-              style: AppTypo.bodySmall.copyWith(
-                  fontWeight: FontWeight.w600)),
-        ],
-      );
+          child: Text(label,
+              style: AppTypo.labelSmall.copyWith(color: color)),
+        ),
+        const SizedBox(height: 2),
+        Text(fmtBRL(value),
+            style: AppTypo.bodySmall.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary)),
+      ],
+    );
+  }
 }
 
-// ─── App icon (tile in the grid) ──────────────────────────────────────────────
+// ─── Month stats row (4 mini-cards) ──────────────────────────────────────────
+
+class _MonthStatsRow extends StatelessWidget {
+  final double income;
+  final double expense;
+  final double savings;
+  final MapEntry<TxCategory, double>? topCat;
+
+  const _MonthStatsRow({
+    required this.income,
+    required this.expense,
+    required this.savings,
+    required this.topCat,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _StatTile(
+            label: 'Receitas',
+            value: fmtBRL(income),
+            icon: Icons.south_rounded,
+            color: AppColors.positive,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: _StatTile(
+            label: 'Despesas',
+            value: fmtBRL(expense),
+            icon: Icons.north_rounded,
+            color: AppColors.negative,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: _StatTile(
+            label: 'Economia',
+            value: fmtBRL(savings.abs()),
+            icon: savings >= 0
+                ? Icons.trending_up_rounded
+                : Icons.trending_down_rounded,
+            color: savings >= 0 ? AppColors.accent4 : AppColors.negative,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: topCat != null
+              ? _StatTile(
+                  label: 'Maior gasto',
+                  value: topCat!.key.label,
+                  icon: topCat!.key.icon,
+                  color: topCat!.key.color,
+                  subtitle: fmtBRL(topCat!.value),
+                )
+              : _StatTile(
+                  label: 'Maior gasto',
+                  value: '—',
+                  icon: Icons.remove_rounded,
+                  color: AppColors.textMuted,
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+  final String? subtitle;
+
+  const _StatTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+    this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.smd - 2, vertical: AppSpacing.smd - 2),
+      radius: AppRadius.md,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 12),
+              const SizedBox(width: 3),
+              Expanded(
+                child: Text(label,
+                    style: AppTypo.labelSmall,
+                    overflow: TextOverflow.ellipsis),
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            style: AppTypo.bodySmall.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (subtitle != null)
+            Text(
+              subtitle!,
+              style: AppTypo.caption.copyWith(fontSize: 10),
+              overflow: TextOverflow.ellipsis,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── App icon tile ───────────────────────────────────────────────────────────
 
 class _AppIcon extends StatelessWidget {
   final AppTool tool;
@@ -263,24 +448,17 @@ class _AppIcon extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AppIconBadge(icon: tool.icon, color: tool.color, size: 60),
-          const SizedBox(height: AppSpacing.sm - 2),
+          AppIconBadge(icon: tool.icon, color: tool.color, size: 58),
+          const SizedBox(height: 6),
           Text(
             tool.name,
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: AppTypo.labelSmall.copyWith(
-              color: Colors.white,
+              color: AppColors.textPrimary,
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              shadows: const [
-                Shadow(
-                  color: Colors.black54,
-                  blurRadius: 4,
-                  offset: Offset(0, 1),
-                ),
-              ],
             ),
           ),
         ],
