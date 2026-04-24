@@ -20,4 +20,11 @@ class AppColors {
   ];
 
   static const List<Color> accentGradient = [accent1, accent2, accent3];
+
+  // Protocolo Black — mentoria
+  static const Color pbGold       = Color(0xFFD4AF37); // dourado principal
+  static const Color pbGoldLight  = Color(0xFFEAC25A);
+  static const Color pbGoldDark   = Color(0xFF9E7E1A);
+  static const Color pbBlack      = Color(0xFF0A0A0A);
+  static const List<Color> pbGradient = [pbGoldDark, pbGold, pbGoldLight];
 }
