@@ -3,7 +3,7 @@
 #
 # Adiciona o site de documentação à VPS que já passou pelo setup-vps.sh.
 # Uso: sudo bash setup-docs.sh <dominio-dos-docs>
-# Ex:  sudo bash setup-docs.sh docs.maestrofinancas.com.br
+# Ex:  sudo bash setup-docs.sh maestrofinancas.chavemestresolucoes.com
 #
 # Pré-requisitos: setup-vps.sh já executado (nginx, Docker, usuário deploy).
 
@@ -11,7 +11,7 @@ set -euo pipefail
 log() { printf '\n\033[1;34m▶ %s\033[0m\n' "$*"; }
 ok()  { printf '\033[1;32m  ✔ %s\033[0m\n' "$*"; }
 
-DOCS_DOMAIN="${1:?Uso: setup-docs.sh <dominio>  ex: docs.maestrofinancas.com.br}"
+DOCS_DOMAIN="${1:?Uso: setup-docs.sh <dominio>  ex: maestrofinancas.chavemestresolucoes.com}"
 
 # ── 1. Diretório da stack de docs ────────────────────────────────────────────
 log "Criando /opt/maestro/docs"

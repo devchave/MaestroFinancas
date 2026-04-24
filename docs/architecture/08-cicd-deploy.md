@@ -154,7 +154,7 @@ Execute `deploy/vps/setup-vps.sh` como root. O script instala e configura:
 
 Após o setup, os únicos passos manuais são:
 - Preencher `WEBHOOK_SECRET` em `/etc/maestro/receiver.env`.
-- Rodar `certbot --nginx -d <seu-dominio>`.
+- Rodar `certbot --nginx -d maestrofinancas.chavemestresolucoes.com`.
 - Criar os `docker-compose.yml` e `.env` em `/opt/maestro/staging/` e `/opt/maestro/production/`.
 - `systemctl start maestro-deploy`.
 - Adicionar os secrets no GitHub (ver §Secrets abaixo).

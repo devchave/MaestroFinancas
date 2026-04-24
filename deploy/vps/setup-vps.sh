@@ -100,7 +100,7 @@ fi
 log "Configurando nginx"
 apt-get install -y nginx certbot python3-certbot-nginx
 
-DOMAIN="${VPS_DOMAIN:-<SEU_DOMINIO>}"
+DOMAIN="${VPS_DOMAIN:-maestrofinancas.chavemestresolucoes.com}"
 cat > /etc/nginx/sites-available/maestro-deploy << NGINXEOF
 server {
     listen 80;
@@ -151,7 +151,7 @@ ok "UFW ativo (22, 80, 443)"
 printf '\n\033[1;33m══════════════════════════════════════════════\033[0m\n'
 printf '\033[1;33m  Próximos passos manuais:\033[0m\n'
 printf '  1. Preencher /etc/maestro/receiver.env\n'
-printf '  2. Obter TLS: certbot --nginx -d <SEU_DOMINIO>\n'
+printf '  2. Obter TLS: certbot --nginx -d maestrofinancas.chavemestresolucoes.com\n'
 printf '  3. Criar /opt/maestro/staging/.env e /opt/maestro/production/.env\n'
 printf '  4. Criar /opt/maestro/staging/docker-compose.yml (e production/)\n'
 printf '  5. Iniciar o receiver: systemctl start maestro-deploy\n'
